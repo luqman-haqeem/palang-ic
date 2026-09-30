@@ -1,10 +1,15 @@
-import { useReducer, useRef, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import type Konva from "konva";
+import { exportFilename } from "@/domain/filename";
 import type { CardFace } from "@/domain/page";
-import { initialState, reducer } from "@/state/document";
-import { forget, loadSaved } from "@/state/savedRecipients";
+import { buildPdfBlob } from "@/export/buildPdf";
+import { downloadBlob, downloadDataUrl, renderToDataUrl } from "@/export/renderToDataUrl";
+import { canExport, initialState, reducer } from "@/state/document";
+import { forget, loadSaved, remember } from "@/state/savedRecipients";
 import { PageStage } from "@/render/PageStage";
 import { Dropzone } from "@/ui/Dropzone";
+import { ExportBar } from "@/ui/ExportBar";
+import { PlacementControls } from "@/ui/PlacementControls";
 import { TextFields } from "@/ui/TextFields";
 
 const FACES: CardFace[] = ["front", "back"];
@@ -17,6 +22,57 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
   const selectionLayerRef = useRef<Konva.Layer | null>(null);
+
+  function exportCopy(ext: "png" | "pdf") {
+    const stage = stageRef.current;
+    if (!stage) return;
+    try {
+      const filename = exportFilename(state.text.recipient, state.text.date, ext);
+      if (ext === "png") {
+        const url = renderToDataUrl(stage, selectionLayerRef.current, { mimeType: "image/png" });
+        downloadDataUrl(url, filename);
+      } else {
+        const jpeg = renderToDataUrl(stage, selectionLayerRef.current, {
+          mimeType: "image/jpeg",
+          quality: 0.92,
+        });
+        downloadBlob(buildPdfBlob(jpeg), filename);
+      }
+      setSaved(remember("recipient", state.text.recipient));
+      setSaved(remember("purpose", state.text.purpose));
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "The export failed.");
+    }
+  }
+
+  // Arrow-key nudge: the difference between "close enough" and "exactly clear of
+  // the IC number", which is this tool's one real precision requirement.
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && /^(INPUT|TEXTAREA)$/.test(target.tagName)) return;
+      const step = e.shiftKey ? 10 : 1;
+      const moves: Record<string, { cx?: number; cy?: number }> = {
+        ArrowLeft: { cx: -step },
+        ArrowRight: { cx: step },
+        ArrowUp: { cy: -step },
+        ArrowDown: { cy: step },
+      };
+      const move = moves[e.key];
+      if (!move) return;
+      e.preventDefault();
+      const current = state.placements[selected];
+      dispatch({
+        type: "setPlacement",
+        face: selected,
+        patch: { cx: current.cx + (move.cx ?? 0), cy: current.cy + (move.cy ?? 0) },
+      });
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected, state.placements]);
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 p-4 lg:flex-row">
@@ -69,6 +125,32 @@ export default function App() {
           onEditLine={(line) => dispatch({ type: "editLine", line })}
           onResetLine={() => dispatch({ type: "resetLine" })}
           onForget={(field, value) => setSaved(forget(field, value))}
+        />
+
+        {FACES.filter((face) => state.scans[face]).map((face) => (
+          <PlacementControls
+            key={face}
+            face={face}
+            placement={state.placements[face]}
+            onChange={(patch) => dispatch({ type: "setPlacement", face, patch })}
+            onReset={() => dispatch({ type: "resetPlacement", face })}
+          />
+        ))}
+
+        <ExportBar
+          disabled={!canExport(state)}
+          disabledReason={
+            !state.scans.front && !state.scans.back
+              ? "Add at least one scan."
+              : "Fill in both purpose and recipient — a palang with an empty purpose grants no limit on use."
+          }
+          onExportPng={() => exportCopy("png")}
+          onExportPdf={() => exportCopy("pdf")}
+          onClearAll={() => {
+            setSelected(null);
+            setError(null);
+            dispatch({ type: "clearAll", today: today() });
+          }}
         />
       </aside>
     </main>
