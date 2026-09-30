@@ -1,32 +1,47 @@
-# React + TypeScript + Vite
+# palang-ic
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Adds a JPN-style **palang** to copies of a MyKad: two parallel lines with a
+restrictive sentence between them, naming the recipient, the purpose and the
+date. Front and back go onto one A4 page, exportable as PNG or PDF.
 
-Currently, two official plugins are available:
+Everything happens in the browser. Scans are never uploaded and never written
+to storage — a reload loses the session by design. See `CONTEXT.md` for the
+vocabulary and `docs/superpowers/specs/` for the design.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Use
 
-## React Compiler
+Scan or photocopy both sides of the card as JPEG, PNG or WebP. Drop them in,
+fill in the purpose and recipient, drag each band clear of the photo, name, IC
+number and date of birth, then export.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The palang must not obscure those fields: the recipient still has to be able to
+verify the card. The tool does not check this for you — look at the preview.
 
-## Expanding the Oxlint configuration
+Drag a band to move it; click it and use the arrow keys to nudge by 1px, or
+shift-arrow for 10px. Angle and text size are sliders. The composed sentence is
+editable; editing it by hand detaches it from the fields until you press
+"Reset to template".
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Develop
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev        # dev server
+npm test           # vitest
+npm run typecheck  # tsc -b
+npm run lint       # oxlint
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Layout maths, the sentence template, text fitting and filenames live in
+`src/domain/` as pure functions and carry the tests. The Konva components in
+`src/render/` are verified by eye — jsdom has no canvas.
+
+## Deploy
+
+Cloudflare Workers with a static assets binding; Cloudflare serves the bundle
+and never sees a scan.
+
+```bash
+npx wrangler login   # first time only
+npm run deploy
+```
