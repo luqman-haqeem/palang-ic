@@ -57,6 +57,25 @@ describe("text fields and detaching", () => {
   });
 });
 
+describe("setDate", () => {
+  it("recomposes the line with the new date while attached", () => {
+    let s = initialState("2026-09-30");
+    s = reducer(s, { type: "setField", field: "recipient", value: "Maybank" });
+    s = reducer(s, { type: "setField", field: "purpose", value: "urusan telco" });
+    s = reducer(s, { type: "setDate", date: "2026-10-01" });
+    expect(s.text.date).toBe("2026-10-01");
+    expect(s.text.line).toContain("01/10/2026");
+  });
+
+  it("leaves a hand-edited line alone", () => {
+    let s = initialState("2026-09-30");
+    s = reducer(s, { type: "editLine", line: "CUSTOM" });
+    s = reducer(s, { type: "setDate", date: "2026-10-01" });
+    expect(s.text.line).toBe("CUSTOM");
+    expect(s.text.date).toBe("2026-10-01");
+  });
+});
+
 describe("scans", () => {
   it("adds and removes a scan for one face without touching the other", () => {
     let s = initialState(TODAY);
@@ -114,6 +133,27 @@ describe("canExport", () => {
     s = reducer(s, { type: "setScan", face: "front", scan: fakeScan() });
     s = reducer(s, { type: "setField", field: "recipient", value: "   " });
     s = reducer(s, { type: "setField", field: "purpose", value: "urusan telco" });
+    expect(canExport(s)).toBe(false);
+  });
+
+  it("is false when the palang text has been hand-edited to empty", () => {
+    // Two red lines with no sentence between them is the harm the spec calls
+    // "worse than no palang at all": it looks marked while granting no limit.
+    let s = initialState(TODAY);
+    s = reducer(s, { type: "setScan", face: "front", scan: fakeScan() });
+    s = reducer(s, { type: "setField", field: "recipient", value: "Maybank" });
+    s = reducer(s, { type: "setField", field: "purpose", value: "urusan telco" });
+    expect(canExport(s)).toBe(true);
+    s = reducer(s, { type: "editLine", line: "" });
+    expect(canExport(s)).toBe(false);
+  });
+
+  it("is false when the hand-edited palang text is only whitespace", () => {
+    let s = initialState(TODAY);
+    s = reducer(s, { type: "setScan", face: "front", scan: fakeScan() });
+    s = reducer(s, { type: "setField", field: "recipient", value: "Maybank" });
+    s = reducer(s, { type: "setField", field: "purpose", value: "urusan telco" });
+    s = reducer(s, { type: "editLine", line: "   " });
     expect(canExport(s)).toBe(false);
   });
 

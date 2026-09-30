@@ -54,6 +54,17 @@ export function clampBandCentre(
   };
 }
 
+/** The same clamp, addressed by face, so a Konva `dragBoundFunc` and the reducer
+ *  can share one tested implementation. A reducer clamp alone is not enough: for
+ *  a controlled react-konva node, a clamped value equal to the one already in
+ *  state is not re-applied to the node, leaving the band where it was dropped. */
+export function clampCentreToFace(
+  face: CardFace,
+  centre: { cx: number; cy: number },
+): { cx: number; cy: number } {
+  return clampBandCentre(centre, cardRect(face));
+}
+
 export type PalangText = {
   recipient: string;
   purpose: string;

@@ -1,5 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from "react";
 import type Konva from "konva";
+import { isoToday } from "@/domain/clock";
 import { exportFilename } from "@/domain/filename";
 import type { CardFace } from "@/domain/page";
 import { buildPdfBlob } from "@/export/buildPdf";
@@ -13,7 +14,7 @@ import { PlacementControls } from "@/ui/PlacementControls";
 import { TextFields } from "@/ui/TextFields";
 
 const FACES: CardFace[] = ["front", "back"];
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => isoToday(new Date());
 
 export default function App() {
   const [state, dispatch] = useReducer(reducer, today(), initialState);
@@ -21,7 +22,6 @@ export default function App() {
   const [saved, setSaved] = useState(loadSaved);
   const [error, setError] = useState<string | null>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
-  const selectionLayerRef = useRef<Konva.Layer | null>(null);
 
   function exportCopy(ext: "png" | "pdf") {
     const stage = stageRef.current;
@@ -29,10 +29,10 @@ export default function App() {
     try {
       const filename = exportFilename(state.text.recipient, state.text.date, ext);
       if (ext === "png") {
-        const url = renderToDataUrl(stage, selectionLayerRef.current, { mimeType: "image/png" });
+        const url = renderToDataUrl(stage, { mimeType: "image/png" });
         downloadDataUrl(url, filename);
       } else {
-        const jpeg = renderToDataUrl(stage, selectionLayerRef.current, {
+        const jpeg = renderToDataUrl(stage, {
           mimeType: "image/jpeg",
           quality: 0.92,
         });
@@ -45,6 +45,22 @@ export default function App() {
       setError(err instanceof Error ? err.message : "The export failed.");
     }
   }
+
+  // An installed PWA can sit open across midnight; re-read the date whenever the
+  // tab becomes visible again so a Copy is never stamped with yesterday.
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === "visible") {
+        dispatch({ type: "setDate", date: today() });
+      }
+    };
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, []);
 
   // Arrow-key nudge: the difference between "close enough" and "exactly clear of
   // the IC number", which is this tool's one real precision requirement.
@@ -83,7 +99,6 @@ export default function App() {
           onSelect={setSelected}
           onDragEnd={(face, patch) => dispatch({ type: "setPlacement", face, patch })}
           stageRef={stageRef}
-          selectionLayerRef={selectionLayerRef}
         />
       </section>
 

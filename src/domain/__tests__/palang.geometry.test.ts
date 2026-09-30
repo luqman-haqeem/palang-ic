@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { cardRect } from "@/domain/page";
-import { bandGeometry, clampBandCentre, defaultPlacement, INK } from "@/domain/palang";
+import {
+  bandGeometry,
+  clampBandCentre,
+  clampCentreToFace,
+  defaultPlacement,
+  INK,
+} from "@/domain/palang";
 
 describe("bandGeometry", () => {
   it("derives gap, stroke and length from font size and card width", () => {
@@ -57,4 +63,35 @@ describe("clampBandCentre", () => {
 
 it("uses the spec ink colour", () => {
   expect(INK).toBe("#9B1C1C");
+});
+
+describe("clampCentreToFace", () => {
+  it("clamps to the front card without the caller knowing the rect", () => {
+    const rect = cardRect("front");
+    expect(clampCentreToFace("front", { cx: -999, cy: -999 })).toEqual({
+      cx: rect.x,
+      cy: rect.y,
+    });
+  });
+
+  it("clamps to the back card", () => {
+    const rect = cardRect("back");
+    expect(clampCentreToFace("back", { cx: 99999, cy: 99999 })).toEqual({
+      cx: rect.x + rect.width,
+      cy: rect.y + rect.height,
+    });
+  });
+
+  it("keeps a band dragged into the gap between the faces on its own card", () => {
+    // The gap is 57px of page between the two card rects. A band parked there
+    // would mark nothing, which is the one outcome the clamp exists to prevent.
+    const front = cardRect("front");
+    const inTheGap = { cx: 396, cy: front.y + front.height + 20 };
+    expect(clampCentreToFace("front", inTheGap).cy).toBe(front.y + front.height);
+  });
+
+  it("is idempotent, so re-clamping an already-clamped centre changes nothing", () => {
+    const once = clampCentreToFace("front", { cx: -50, cy: 9999 });
+    expect(clampCentreToFace("front", once)).toEqual(once);
+  });
 });

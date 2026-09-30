@@ -15,6 +15,8 @@ export function CardSlot({ face, scan }: { face: CardFace; scan?: Scan }) {
         stroke="#d4d4d4"
         dash={[6, 6]}
         strokeWidth={1}
+        listening={false}
+        name="placeholder"
       />
     );
   }

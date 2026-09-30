@@ -14,7 +14,6 @@ type Props = {
   onSelect: (face: CardFace | null) => void;
   onDragEnd: (face: CardFace, patch: { cx: number; cy: number }) => void;
   stageRef: React.RefObject<Konva.Stage | null>;
-  selectionLayerRef: React.RefObject<Konva.Layer | null>;
 };
 
 export function PageStage({
@@ -23,7 +22,6 @@ export function PageStage({
   onSelect,
   onDragEnd,
   stageRef,
-  selectionLayerRef,
 }: Props) {
   const holder = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -57,11 +55,12 @@ export function PageStage({
             <CardSlot key={face} face={face} scan={state.scans[face]} />
           ))}
         </Layer>
-        <Layer ref={selectionLayerRef}>
+        <Layer>
           {FACES.map((face) =>
             state.scans[face] ? (
               <PalangBand
                 key={face}
+                face={face}
                 placement={state.placements[face]}
                 line={state.text.line}
                 selected={selected === face}

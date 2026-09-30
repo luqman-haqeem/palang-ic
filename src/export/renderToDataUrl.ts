@@ -1,37 +1,37 @@
 import type Konva from "konva";
+import { dataUrlToBlob } from "@/export/dataUrl";
+import { exportPixelRatio } from "@/export/exportScale";
 
-export const EXPORT_PIXEL_RATIO = 300 / 96;
+/** Nodes that exist only to help the user aim and must never reach a Copy:
+ *  the dashed selection outline, and the dashed placeholder drawn in an empty
+ *  card slot (which would otherwise print as a grey box on a one-sided Copy). */
+export const PREVIEW_ONLY_NAMES = ["selection", "placeholder"] as const;
 
-/** Hides the dashed selection outline before rendering, then restores it. The
- *  outline is found by name rather than by hiding its layer, because the palang
- *  bands live in that layer too and hiding it would omit them from the Copy. */
 export function renderToDataUrl(
   stage: Konva.Stage,
-  selectionLayer: Konva.Layer | null,
   opts: { mimeType: string; quality?: number },
 ): string {
-  const outlines = selectionLayer?.find(".selection") ?? [];
-  for (const outline of outlines) outline.hide();
+  const hidden = PREVIEW_ONLY_NAMES.flatMap((name) => stage.find(`.${name}`)).filter((node) =>
+    node.isVisible(),
+  );
+  for (const node of hidden) node.hide();
   try {
-    return stage.toDataURL({ pixelRatio: EXPORT_PIXEL_RATIO, ...opts });
+    return stage.toDataURL({ pixelRatio: exportPixelRatio(stage.scaleX()), ...opts });
   } finally {
-    for (const outline of outlines) outline.show();
+    for (const node of hidden) node.show();
   }
 }
 
 export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
-  triggerDownload(url, filename);
-  URL.revokeObjectURL(url);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  // Revoking synchronously after click() cancels the download in some browsers.
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 export function downloadDataUrl(dataUrl: string, filename: string): void {
-  triggerDownload(dataUrl, filename);
-}
-
-function triggerDownload(href: string, filename: string): void {
-  const a = document.createElement("a");
-  a.href = href;
-  a.download = filename;
-  a.click();
+  downloadBlob(dataUrlToBlob(dataUrl), filename);
 }

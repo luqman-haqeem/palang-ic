@@ -26,6 +26,7 @@ export type Action =
   | { type: "editLine"; line: string }
   | { type: "resetLine" }
   | { type: "setPlacement"; face: CardFace; patch: Partial<PalangPlacement> }
+  | { type: "setDate"; date: string }
   | { type: "resetPlacement"; face: CardFace }
   | { type: "clearAll"; today: string };
 
@@ -85,6 +86,9 @@ export function reducer(state: SessionState, action: Action): SessionState {
     case "resetLine":
       return withText(state, { ...state.text, detached: false });
 
+    case "setDate":
+      return withText(state, { ...state.text, date: action.date });
+
     case "setPlacement":
       return {
         ...state,
@@ -105,9 +109,12 @@ export function reducer(state: SessionState, action: Action): SessionState {
   }
 }
 
-/** A Copy with an empty purpose looks marked while granting no limit on use,
- *  which is worse than no palang at all. */
+/** A Copy that looks marked while granting no limit on use is worse than no
+ *  palang at all, so both doors are closed: the fields must compose a sentence,
+ *  and whatever is actually about to be drawn must not be blank. The second
+ *  check is the one that matters once the line has been detached by hand. */
 export function canExport(state: SessionState): boolean {
   const hasScan = Boolean(state.scans.front || state.scans.back);
-  return hasScan && state.text.recipient.trim() !== "" && state.text.purpose.trim() !== "";
+  if (!hasScan || state.text.line.trim() === "") return false;
+  return state.text.recipient.trim() !== "" && state.text.purpose.trim() !== "";
 }
