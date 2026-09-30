@@ -53,3 +53,41 @@ export function clampBandCentre(
     cy: Math.min(Math.max(centre.cy, rect.y), rect.y + rect.height),
   };
 }
+
+export type PalangText = {
+  recipient: string;
+  purpose: string;
+  date: string; // ISO yyyy-mm-dd
+  line: string;
+  detached: boolean;
+};
+
+/** Splits the ISO string rather than parsing it. Going through `Date` would make
+ *  the rendered day depend on the runtime timezone. */
+export function formatDate(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+export function composeLine(t: { recipient: string; purpose: string; date: string }): string {
+  const purpose = t.purpose.trim().toUpperCase();
+  const recipient = t.recipient.trim().toUpperCase();
+  return `UNTUK URUSAN ${purpose} ${recipient} SAHAJA — ${formatDate(t.date)}`;
+}
+
+/** Shrinks the text until it fits the band, with a floor below which it is
+ *  allowed to overflow rather than become unreadable. The measurer is injected
+ *  so this stays testable without a canvas. */
+export function fitFontSize(
+  line: string,
+  maxWidth: number,
+  startSize: number,
+  floor: number,
+  measure: (text: string, size: number) => number,
+): number {
+  let size = startSize;
+  while (size > floor && measure(line, size) > maxWidth) {
+    size -= 1;
+  }
+  return Math.max(size, floor);
+}
