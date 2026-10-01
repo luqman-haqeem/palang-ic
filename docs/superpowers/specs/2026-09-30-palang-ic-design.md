@@ -468,3 +468,50 @@ not stamp yesterday.
 `CONTEXT.md` retires **Recipient**, **Purpose**, **Saved recipient** and
 **Placement default**, and adds **Palang text**, **Saved line**, **Band style**
 and **Placement**.
+
+### Band form and defaults, tuned against a real card — 2026-10-01
+
+The band is no longer a full-width horizontal stroke. It is a **corner palang**:
+a shorter stroke across the top-left of the card, at a steep angle.
+
+Defaults, measured by the user with the in-app sliders rather than guessed:
+
+| Setting | Value |
+|---|---|
+| `angleDeg` | −45 |
+| `lengthFactor` | 0.55 (of card width) |
+| `fontSize` | 13 |
+| centre offset within card | 34px right, 40px down (`BAND_X_FRACTION` 0.105, `BAND_Y_FRACTION` 0.196) |
+
+This supersedes the original "band across the lower third at −12°, overhanging
+both edges", and with it the spec's top risk — the placement constant is now
+measured, not reasoned from memory.
+
+**The band deliberately runs off the top-left corner** at these values. That is
+intended: a palang is a stroke drawn across a copy, not a graphic fitted inside
+it. The test that asserted the whole band stayed within the card has been
+replaced by one asserting the overhang and that only the *centre* is clamped.
+
+`lengthFactor` is now part of `BandStyle` and adjustable, 0.25–1.2. At 1.2 the
+old full-width-with-overhang look is still reachable, so the corner form is a
+default rather than a constraint.
+
+The user's front and back offsets differed by 1px (40 and 39). Normalised to a
+single shared offset, on the grounds that 1px at 96dpi is 0.26mm and is slider
+noise rather than intent. Per-face positions remain independently adjustable.
+
+### Controls live under "Advanced settings"
+
+The angle, length, text-size and per-face position sliders, plus the values
+readout, are collapsed behind a disclosure. The defaults are tuned, so a normal
+use is: drop two scans, check the text, export. The sliders exist for the copy a
+recipient wants marked differently — and existed in the first place because
+dragging a small band with a thumb on a phone is fiddly.
+
+### A build ID is shown in the readout
+
+`vite.config.ts` injects `__BUILD_ID__` (month-day hour:minute) and the readout
+prints it. During iteration a redeploy to the same URL can be masked by the
+service worker's precache, which cost a test window: the symptom is an apparently
+unchanged app. A visible build ID makes staleness diagnosable rather than
+mysterious.

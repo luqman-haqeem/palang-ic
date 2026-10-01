@@ -9,14 +9,14 @@ import {
 } from "@/domain/palang";
 
 describe("DEFAULT_BAND_STYLE", () => {
-  it("is a -45-degree corner stroke at half the card width", () => {
-    expect(DEFAULT_BAND_STYLE).toEqual({ angleDeg: -45, fontSize: 14, lengthFactor: 0.5 });
+  it("matches the values tuned against a real MyKad", () => {
+    expect(DEFAULT_BAND_STYLE).toEqual({ angleDeg: -45, fontSize: 13, lengthFactor: 0.55 });
   });
 });
 
 describe("bandGeometry", () => {
   it("takes its length from the card width and the length factor", () => {
-    expect(bandGeometry(14, 323, 0.5).length).toBeCloseTo(161.5, 1);
+    expect(bandGeometry(13, 323, 0.55).length).toBeCloseTo(177.65, 1);
   });
 
   it("can still span the whole card with overhang at the top of the range", () => {
@@ -24,19 +24,19 @@ describe("bandGeometry", () => {
   });
 
   it("keeps gap and stroke derived from font size alone", () => {
-    const g = bandGeometry(14, 323, 0.5);
-    expect(g.lineGap).toBeCloseTo(14 * 1.6, 6);
-    expect(g.strokeWidth).toBeCloseTo(14 * 0.12, 6);
+    const g = bandGeometry(13, 323, 0.55);
+    expect(g.lineGap).toBeCloseTo(13 * 1.6, 6);
+    expect(g.strokeWidth).toBeCloseTo(13 * 0.12, 6);
   });
 });
 
 describe("defaultPlacement", () => {
   it("sits in the top-left corner of the front card", () => {
-    expect(defaultPlacement("front")).toEqual({ cx: 306, cy: 155 });
+    expect(defaultPlacement("front")).toEqual({ cx: 269, cy: 134 });
   });
 
   it("sits in the top-left corner of the back card", () => {
-    expect(defaultPlacement("back")).toEqual({ cx: 306, cy: 416 });
+    expect(defaultPlacement("back")).toEqual({ cx: 269, cy: 395 });
   });
 
   it("is in the upper-left quadrant of its own card, for both faces", () => {
@@ -50,8 +50,9 @@ describe("defaultPlacement", () => {
     }
   });
 
-  it("leaves the whole angled band inside the card", () => {
-    // At +/-45 degrees a band of length L needs L/(2*sqrt2) clearance per axis.
+  it("deliberately overhangs the top-left corner, like a stroke drawn off the edge", () => {
+    // Tuned against a real card: the band runs past the corner rather than
+    // stopping inside it. Only the centre is constrained to the card.
     const { width: cardWidth } = cardSize();
     const { length } = bandGeometry(
       DEFAULT_BAND_STYLE.fontSize,
@@ -59,14 +60,13 @@ describe("defaultPlacement", () => {
       DEFAULT_BAND_STYLE.lengthFactor,
     );
     const reach = length / (2 * Math.SQRT2);
-    for (const face of ["front", "back"] as const) {
-      const rect = cardRect(face);
-      const { cx, cy } = defaultPlacement(face);
-      expect(cx - reach).toBeGreaterThanOrEqual(rect.x);
-      expect(cy - reach).toBeGreaterThanOrEqual(rect.y);
-      expect(cx + reach).toBeLessThanOrEqual(rect.x + rect.width);
-      expect(cy + reach).toBeLessThanOrEqual(rect.y + rect.height);
-    }
+    const rect = cardRect("front");
+    const { cx, cy } = defaultPlacement("front");
+    expect(cx - reach).toBeLessThan(rect.x);
+    expect(cy - reach).toBeLessThan(rect.y);
+    // ...while the centre itself stays well inside, which is what the clamp guards.
+    expect(cx).toBeGreaterThan(rect.x);
+    expect(cy).toBeGreaterThan(rect.y);
   });
 });
 

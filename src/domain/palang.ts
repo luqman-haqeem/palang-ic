@@ -14,14 +14,16 @@ export const FONT_FLOOR = 6;
 export const LENGTH_MIN = 0.25;
 export const LENGTH_MAX = 1.2;
 export const DEFAULT_ANGLE_DEG = -45;
-export const DEFAULT_FONT_SIZE = 14;
-export const DEFAULT_LENGTH_FACTOR = 0.5;
+export const DEFAULT_FONT_SIZE = 13;
+export const DEFAULT_LENGTH_FACTOR = 0.55;
 
-/** Where the band's centre sits by default: the top-left corner of the card,
- *  as a fraction of its width and height. Chosen so a 45-degree half-width
- *  band falls entirely inside the card. */
-const BAND_X_FRACTION = 0.22;
-const BAND_Y_FRACTION = 0.3;
+/** Where the band's centre sits by default, as a fraction of card width and
+ *  height. Tuned by hand against a real MyKad so the band crosses the top-left
+ *  corner clear of the photo, name, IC number and date of birth. The band runs
+ *  off the corner at this position, which is intended — a palang is a stroke
+ *  drawn across a copy, not a graphic fitted inside it. */
+const BAND_X_FRACTION = 0.105;
+const BAND_Y_FRACTION = 0.196;
 
 /** Where a band sits on its own card face. Position is per-face because the
  *  fields to avoid sit differently on the front and the back. */

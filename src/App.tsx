@@ -8,12 +8,10 @@ import { downloadBlob, downloadDataUrl, renderToDataUrl } from "@/export/renderT
 import { canExport, initialState, reducer } from "@/state/document";
 import { forgetLine, loadLines, rememberLine } from "@/state/savedLines";
 import { PageStage } from "@/render/PageStage";
-import { BandStyleControls } from "@/ui/BandStyleControls";
+import { AdvancedSettings } from "@/ui/AdvancedSettings";
 import { Dropzone } from "@/ui/Dropzone";
 import { ExportBar } from "@/ui/ExportBar";
 import { PalangTextField } from "@/ui/PalangTextField";
-import { PlacementControls } from "@/ui/PlacementControls";
-import { SettingsReadout } from "@/ui/SettingsReadout";
 
 const FACES: CardFace[] = ["front", "back"];
 const today = () => isoToday(new Date());
@@ -140,22 +138,14 @@ export default function App() {
         />
 
         {loadedFaces.length > 0 && (
-          <>
-            <BandStyleControls
-              style={state.style}
-              onChange={(patch) => dispatch({ type: "setStyle", patch })}
-            />
-            {loadedFaces.map((face) => (
-              <PlacementControls
-                key={face}
-                face={face}
-                placement={state.placements[face]}
-                onChange={(patch) => dispatch({ type: "setPlacement", face, patch })}
-                onReset={() => dispatch({ type: "resetPlacement", face })}
-              />
-            ))}
-            <SettingsReadout style={state.style} placements={state.placements} />
-          </>
+          <AdvancedSettings
+            faces={loadedFaces}
+            style={state.style}
+            placements={state.placements}
+            onStyleChange={(patch) => dispatch({ type: "setStyle", patch })}
+            onPlacementChange={(face, patch) => dispatch({ type: "setPlacement", face, patch })}
+            onPlacementReset={(face) => dispatch({ type: "resetPlacement", face })}
+          />
         )}
 
         <ExportBar
