@@ -9,8 +9,8 @@ import {
 } from "@/domain/palang";
 
 describe("DEFAULT_BAND_STYLE", () => {
-  it("is a 45-degree corner stroke at half the card width", () => {
-    expect(DEFAULT_BAND_STYLE).toEqual({ angleDeg: 45, fontSize: 14, lengthFactor: 0.5 });
+  it("is a -45-degree corner stroke at half the card width", () => {
+    expect(DEFAULT_BAND_STYLE).toEqual({ angleDeg: -45, fontSize: 14, lengthFactor: 0.5 });
   });
 });
 
@@ -32,11 +32,11 @@ describe("bandGeometry", () => {
 
 describe("defaultPlacement", () => {
   it("sits in the top-left corner of the front card", () => {
-    expect(defaultPlacement("front")).toEqual({ cx: 332, cy: 155 });
+    expect(defaultPlacement("front")).toEqual({ cx: 306, cy: 155 });
   });
 
   it("sits in the top-left corner of the back card", () => {
-    expect(defaultPlacement("back")).toEqual({ cx: 332, cy: 416 });
+    expect(defaultPlacement("back")).toEqual({ cx: 306, cy: 416 });
   });
 
   it("is in the upper-left quadrant of its own card, for both faces", () => {
@@ -50,8 +50,8 @@ describe("defaultPlacement", () => {
     }
   });
 
-  it("leaves the whole 45-degree band inside the card", () => {
-    // At 45 degrees a band of length L needs L/(2*sqrt2) clearance on each axis.
+  it("leaves the whole angled band inside the card", () => {
+    // At +/-45 degrees a band of length L needs L/(2*sqrt2) clearance per axis.
     const { width: cardWidth } = cardSize();
     const { length } = bandGeometry(
       DEFAULT_BAND_STYLE.fontSize,

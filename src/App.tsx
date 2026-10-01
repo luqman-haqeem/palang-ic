@@ -13,6 +13,7 @@ import { Dropzone } from "@/ui/Dropzone";
 import { ExportBar } from "@/ui/ExportBar";
 import { PalangTextField } from "@/ui/PalangTextField";
 import { PlacementControls } from "@/ui/PlacementControls";
+import { SettingsReadout } from "@/ui/SettingsReadout";
 
 const FACES: CardFace[] = ["front", "back"];
 const today = () => isoToday(new Date());
@@ -153,6 +154,7 @@ export default function App() {
                 />
               ))}
             </div>
+            <SettingsReadout style={state.style} placements={state.placements} />
           </>
         )}
 

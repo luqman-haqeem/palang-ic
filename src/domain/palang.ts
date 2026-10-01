@@ -13,14 +13,14 @@ export const FONT_MAX = 24;
 export const FONT_FLOOR = 6;
 export const LENGTH_MIN = 0.25;
 export const LENGTH_MAX = 1.2;
-export const DEFAULT_ANGLE_DEG = 45;
+export const DEFAULT_ANGLE_DEG = -45;
 export const DEFAULT_FONT_SIZE = 14;
 export const DEFAULT_LENGTH_FACTOR = 0.5;
 
 /** Where the band's centre sits by default: the top-left corner of the card,
  *  as a fraction of its width and height. Chosen so a 45-degree half-width
  *  band falls entirely inside the card. */
-const BAND_X_FRACTION = 0.3;
+const BAND_X_FRACTION = 0.22;
 const BAND_Y_FRACTION = 0.3;
 
 /** Where a band sits on its own card face. Position is per-face because the
