@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { cardRect } from "@/domain/page";
-import { DEFAULT_BAND_STYLE, defaultPlacement } from "@/domain/palang";
+import { DEFAULT_BAND_STYLE, defaultPlacement, PALANG_PREFIX } from "@/domain/palang";
 import { canExport, initialState, reducer, type Scan } from "@/state/document";
 import { SAVED_LINES_KEY } from "@/state/savedLines";
 
@@ -11,10 +11,10 @@ const fakeScan = (width = 856, height = 540): Scan =>
 beforeEach(() => localStorage.clear());
 
 describe("initialState", () => {
-  it("starts empty with default placements and one shared style", () => {
+  it("starts with no scans, the seeded prefix, default placements and one shared style", () => {
     const s = initialState(TODAY);
     expect(s.scans).toEqual({});
-    expect(s.line).toBe("");
+    expect(s.line).toBe(PALANG_PREFIX);
     expect(s.date).toBe(TODAY);
     expect(s.placements.front).toEqual(defaultPlacement("front"));
     expect(s.placements.back).toEqual(defaultPlacement("back"));

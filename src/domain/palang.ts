@@ -1,6 +1,11 @@
 import { cardRect, type CardFace, type Rect } from "@/domain/page";
 
 export const INK = "#9B1C1C";
+
+/** A starting point for the palang text, not a format. Different banks and
+ *  agencies want the wording set out differently, so the tool opens the phrase
+ *  and leaves the rest — including whether to name a date — to the user. */
+export const PALANG_PREFIX = "UNTUK URUSAN ";
 export const ANGLE_MIN = -45;
 export const ANGLE_MAX = 45;
 export const FONT_MIN = 8;

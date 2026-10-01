@@ -8,6 +8,7 @@ import {
   defaultPlacement,
   FONT_MAX,
   FONT_MIN,
+  PALANG_PREFIX,
   type PalangPlacement,
 } from "@/domain/palang";
 
@@ -37,7 +38,7 @@ export type Action =
 export function initialState(today: string): SessionState {
   return {
     scans: {},
-    line: "",
+    line: PALANG_PREFIX,
     date: today,
     placements: { front: defaultPlacement("front"), back: defaultPlacement("back") },
     style: { ...DEFAULT_BAND_STYLE },
@@ -97,8 +98,10 @@ export function reducer(state: SessionState, action: Action): SessionState {
 }
 
 /** Blank text would draw two red lines with no sentence between them: a Copy
- *  that looks marked while granting no limit on use. */
+ *  that looks marked while granting no limit on use. The seeded prefix counts as
+ *  blank — on its own it states nothing, so it must not satisfy the guard. */
 export function canExport(state: SessionState): boolean {
   const hasScan = Boolean(state.scans.front || state.scans.back);
-  return hasScan && state.line.trim() !== "";
+  const written = state.line.trim();
+  return hasScan && written !== "" && written !== PALANG_PREFIX.trim();
 }

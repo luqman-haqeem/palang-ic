@@ -1,3 +1,6 @@
+import type React from "react";
+import { PALANG_PREFIX } from "@/domain/palang";
+
 type Props = {
   line: string;
   saved: string[];
@@ -5,9 +8,18 @@ type Props = {
   onForget: (line: string) => void;
 };
 
-/** One free-text field. No template, no auto-date: what you type is what gets
- *  drawn, so including a date or a recipient is your call. */
+/** One free-text field, seeded with a prefix. No template and no auto-date:
+ *  different banks and agencies want the wording set out differently, so what
+ *  you type is what gets drawn. */
 export function PalangTextField({ line, saved, onChange, onForget }: Props) {
+  // Clicking into a field that holds only the prefix should land the caret after
+  // it, not wherever the tap happened to fall.
+  const caretToEnd = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    if (line === PALANG_PREFIX) {
+      const end = e.target.value.length;
+      e.target.setSelectionRange(end, end);
+    }
+  };
   return (
     <div>
       <label className="block">
@@ -15,14 +27,15 @@ export function PalangTextField({ line, saved, onChange, onForget }: Props) {
         <textarea
           value={line}
           onChange={(e) => onChange(e.target.value)}
+          onFocus={caretToEnd}
           rows={2}
           placeholder="UNTUK URUSAN PINJAMAN PERIBADI MAYBANK SAHAJA — 01/10/2026"
           className="mt-1 w-full rounded border border-neutral-300 px-2 py-1 text-sm"
         />
       </label>
       <p className="text-xs text-neutral-500">
-        Drawn exactly as typed. State what the copy may be used for, and keep it clear of the
-        photo, name, IC number and date of birth.
+        Drawn exactly as typed — word it however the recipient wants, and include a date if you
+        want one. Keep the band clear of the photo, name, IC number and date of birth.
       </p>
       {saved.length > 0 && (
         <div className="mt-2 space-y-1">

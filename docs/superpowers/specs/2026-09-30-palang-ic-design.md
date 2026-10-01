@@ -438,6 +438,18 @@ the trade they asked for.
 Text renders as typed rather than forced to upper case: the user owns the
 wording, so the tool should not silently rewrite it.
 
+**The field is seeded with a prefix**, `PALANG_PREFIX = "UNTUK URUSAN "`, as a
+starting point rather than a format. The user's reason for rejecting a fixed
+template is the operative one: different banks and agencies want the wording set
+out differently, so hardcoding one format makes the tool harder to use, not
+safer.
+
+Because the field is seeded, the blank-text guard has to be tighter than
+`!== ""`: the prefix on its own states nothing, so `canExport` treats
+prefix-only text as empty. Wording that does not use the prefix at all is
+accepted, since the prefix is a nudge and not a rule. Focusing a field that
+holds only the prefix puts the caret after it.
+
 ### Export filename is generic
 
 `salinan-{YYYY-MM-DD}.{png|pdf}`, carrying nothing from the palang text.
