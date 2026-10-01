@@ -15,6 +15,7 @@ describe("DEFAULT_BAND_STYLE", () => {
       fontSize: 13,
       lengthFactor: 0.55,
       ink: "#000000",
+      opacity: 1,
     });
   });
 });

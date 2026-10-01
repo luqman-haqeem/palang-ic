@@ -539,3 +539,24 @@ The user confirmed a one-sided Copy exports with **no dashed placeholder box** i
 the empty slot. That was the review finding (I3) fixed by reasoning alone, with
 no automated test possible — jsdom has no canvas. It is now confirmed in a real
 browser.
+
+### Colour swatches and opacity — 2026-10-01
+
+The ink presets render as **colour swatches** rather than coloured text labels,
+with the active one ringed. A swatch shows the colour; a label describes it, and
+for three colours the description was doing no work. Each carries a `title` and
+`aria-label` so the name is still available.
+
+**Opacity is adjustable**, 0.15–1, defaulting to **1**. The default remains fully
+opaque for the reason the original design gave — a palang is ink, and
+transparency reads as a digital overlay added after the fact, which invites the
+recipient to doubt it. But a faded band is sometimes wanted where the underlying
+print must stay readable through the mark, so the control exists.
+
+The floor is 0.15 rather than 0, deliberately: a fully transparent band renders a
+Copy that looks unmarked while the user believes it is marked, which is the same
+failure class as blank text. Reaching it must be impossible, not merely
+unlikely.
+
+Applied as Konva `opacity` on the band group, so the two lines and the text fade
+together rather than drifting apart. The readout reports it.

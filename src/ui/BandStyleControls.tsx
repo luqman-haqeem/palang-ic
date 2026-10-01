@@ -7,6 +7,8 @@ import {
   FONT_MIN,
   LENGTH_MAX,
   LENGTH_MIN,
+  OPACITY_MAX,
+  OPACITY_MIN,
 } from "@/domain/palang";
 
 /** Black is the default; the others are the colours people reach for when they
@@ -69,14 +71,32 @@ export function BandStyleControls({ style, onChange }: Props) {
               key={preset.value}
               type="button"
               onClick={() => onChange({ ink: preset.value })}
-              className="rounded border border-neutral-300 px-1.5 py-0.5 text-[11px]"
-              style={{ color: preset.value }}
-            >
-              {preset.label}
-            </button>
+              title={preset.label}
+              aria-label={preset.label}
+              aria-pressed={style.ink === preset.value}
+              className={`h-7 w-7 rounded border ${
+                style.ink === preset.value
+                  ? "border-neutral-900 ring-1 ring-neutral-900"
+                  : "border-neutral-300"
+              }`}
+              style={{ backgroundColor: preset.value }}
+            />
           ))}
         </div>
       </div>
+
+      <label className="block text-xs">
+        Opacity: {Math.round(style.opacity * 100)}%
+        <input
+          type="range"
+          min={OPACITY_MIN}
+          max={OPACITY_MAX}
+          step={0.05}
+          value={style.opacity}
+          onChange={(e) => onChange({ opacity: Number(e.target.value) })}
+          className="w-full"
+        />
+      </label>
 
       <label className="block text-xs">
         Text size: {style.fontSize}

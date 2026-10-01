@@ -43,6 +43,7 @@ export function PalangBand({ face, placement, style, line, selected, onSelect, o
       x={placement.cx}
       y={placement.cy}
       rotation={style.angleDeg}
+      opacity={style.opacity}
       draggable
       dragBoundFunc={(pos) => {
         const clamped = clampCentreToFace(face, { cx: pos.x, cy: pos.y });

@@ -13,6 +13,11 @@ export const ANGLE_MAX = 45;
 export const FONT_MIN = 8;
 export const FONT_MAX = 24;
 export const FONT_FLOOR = 6;
+/** Never 0: a fully transparent band renders a Copy that looks unmarked while
+ *  the user believes it is marked. */
+export const OPACITY_MIN = 0.15;
+export const OPACITY_MAX = 1;
+export const DEFAULT_OPACITY = 1;
 export const LENGTH_MIN = 0.25;
 export const LENGTH_MAX = 1.2;
 export const DEFAULT_ANGLE_DEG = -45;
@@ -39,6 +44,7 @@ export type BandStyle = {
   fontSize: number;
   lengthFactor: number;
   ink: string;
+  opacity: number;
 };
 
 /** Accepts `#rgb` or `#rrggbb`, lowercased; anything else falls back. A bad
@@ -59,6 +65,7 @@ export const DEFAULT_BAND_STYLE: BandStyle = {
   fontSize: DEFAULT_FONT_SIZE,
   lengthFactor: DEFAULT_LENGTH_FACTOR,
   ink: DEFAULT_INK,
+  opacity: DEFAULT_OPACITY,
 };
 
 /** Line gap and stroke width stay derived from font size, so the band's

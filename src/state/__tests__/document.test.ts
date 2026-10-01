@@ -50,7 +50,13 @@ describe("setStyle", () => {
       type: "setStyle",
       patch: { angleDeg: 999, fontSize: 999, lengthFactor: 999 },
     });
-    expect(s.style).toEqual({ angleDeg: 45, fontSize: 24, lengthFactor: 1.2, ink: "#000000" });
+    expect(s.style).toEqual({
+      angleDeg: 45,
+      fontSize: 24,
+      lengthFactor: 1.2,
+      ink: "#000000",
+      opacity: 1,
+    });
   });
 });
 

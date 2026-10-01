@@ -14,6 +14,7 @@ export function formatSettingsSummary(
     `lengthFactor ${Number(style.lengthFactor.toFixed(2))}`,
     `fontSize ${style.fontSize}`,
     `ink ${style.ink}`,
+    `opacity ${Number(style.opacity.toFixed(2))}`,
     `front ${pos(placements.front)}`,
     `back ${pos(placements.back)}`,
   ].join(" | ");

@@ -1,13 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { formatSettingsSummary } from "@/domain/settingsSummary";
 
-const style = { angleDeg: -45, fontSize: 14, lengthFactor: 0.5, ink: "#000000" };
+const style = {
+  angleDeg: -45,
+  fontSize: 14,
+  lengthFactor: 0.5,
+  ink: "#000000",
+  opacity: 1,
+};
 const placements = { front: { cx: 306, cy: 155 }, back: { cx: 306, cy: 416 } };
 
 describe("formatSettingsSummary", () => {
   it("reports every value needed to hardcode the current look as a default", () => {
     expect(formatSettingsSummary(style, placements)).toBe(
-      "angleDeg -45 | lengthFactor 0.5 | fontSize 14 | ink #000000 | front 306,155 | back 306,416",
+      "angleDeg -45 | lengthFactor 0.5 | fontSize 14 | ink #000000 | opacity 1 | " +
+        "front 306,155 | back 306,416",
     );
   });
 

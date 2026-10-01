@@ -13,6 +13,8 @@ import {
   LENGTH_MAX,
   LENGTH_MIN,
   normaliseInk,
+  OPACITY_MAX,
+  OPACITY_MIN,
   type PalangPlacement,
 } from "@/domain/palang";
 
@@ -77,6 +79,7 @@ export function reducer(state: SessionState, action: Action): SessionState {
           fontSize: clamp(merged.fontSize, FONT_MIN, FONT_MAX),
           lengthFactor: clamp(merged.lengthFactor, LENGTH_MIN, LENGTH_MAX),
           ink: normaliseInk(merged.ink, DEFAULT_INK),
+          opacity: clamp(merged.opacity, OPACITY_MIN, OPACITY_MAX),
         },
       };
     }
