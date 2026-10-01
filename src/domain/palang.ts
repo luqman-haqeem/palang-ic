@@ -14,11 +14,16 @@ export const DEFAULT_FONT_SIZE = 14;
  *  holds the address block, the field least likely to need to stay legible. */
 const BAND_HEIGHT_FRACTION = 0.72;
 
-export type PalangPlacement = {
-  cx: number;
-  cy: number;
-  angleDeg: number;
-  fontSize: number;
+/** Where a band sits on its own card face. Position is per-face because the
+ *  fields to avoid sit differently on the front and the back. */
+export type PalangPlacement = { cx: number; cy: number };
+
+/** Angle and size are shared by both bands: one palang, one hand. */
+export type BandStyle = { angleDeg: number; fontSize: number };
+
+export const DEFAULT_BAND_STYLE: BandStyle = {
+  angleDeg: DEFAULT_ANGLE_DEG,
+  fontSize: DEFAULT_FONT_SIZE,
 };
 
 /** Everything but the stored four values is derived, so the band's proportions
@@ -36,8 +41,6 @@ export function defaultPlacement(face: CardFace): PalangPlacement {
   return {
     cx: Math.floor(rect.x + rect.width / 2),
     cy: rect.y + Math.round(rect.height * BAND_HEIGHT_FRACTION),
-    angleDeg: DEFAULT_ANGLE_DEG,
-    fontSize: DEFAULT_FONT_SIZE,
   };
 }
 
@@ -63,27 +66,6 @@ export function clampCentreToFace(
   centre: { cx: number; cy: number },
 ): { cx: number; cy: number } {
   return clampBandCentre(centre, cardRect(face));
-}
-
-export type PalangText = {
-  recipient: string;
-  purpose: string;
-  date: string; // ISO yyyy-mm-dd
-  line: string;
-  detached: boolean;
-};
-
-/** Splits the ISO string rather than parsing it. Going through `Date` would make
- *  the rendered day depend on the runtime timezone. */
-export function formatDate(iso: string): string {
-  const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
-}
-
-export function composeLine(t: { recipient: string; purpose: string; date: string }): string {
-  const purpose = t.purpose.trim().toUpperCase();
-  const recipient = t.recipient.trim().toUpperCase();
-  return `UNTUK URUSAN ${purpose} ${recipient} SAHAJA — ${formatDate(t.date)}`;
 }
 
 /** Shrinks the text until it fits the band, with a floor below which it is

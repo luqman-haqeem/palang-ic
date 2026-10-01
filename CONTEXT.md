@@ -34,25 +34,30 @@ The single exported artifact: one A4 page bearing both card faces, each
 palanged. The unit the user sends to a recipient. One Copy is produced from one
 or two Scans.
 
-## Recipient
+## Palang text
 
-The party the Copy is being given to — a bank, a telco, a school. Named inside
-the palang sentence.
+The sentence the user writes, drawn verbatim between the two lines. The tool
+imposes no template and appends no date: whether to name a recipient, a purpose,
+a date, or none of them is the user's decision.
 
-## Purpose
+Previously this was composed by the tool from separate **Recipient** and
+**Purpose** inputs. Both terms are retired, along with the idea of a canonical
+template the tool enforces.
 
-The transaction the Copy is being supplied for — a personal loan, a
-registration. Composes with the Recipient into a single restrictive phrase; the
-two are separate inputs but never separate sentences.
+## Saved line
 
-## Saved recipient
+A Palang text remembered from previous use and offered back for reuse. Replaces
+the retired **Saved recipient**.
 
-A Recipient or Purpose value remembered from previous use and offered back as a
-suggestion. Distinct from a Placement default.
+## Band style
 
-## Placement default
+The angle and text size of the palang, shared by both Card faces — it is one
+palang drawn by one hand. Distinct from **Placement**, which is per-face.
 
-The starting geometry of a palang on a card face, before the user adjusts it.
-Distinct from a Saved recipient.
+## Placement
 
-Both were previously called "preset". That term is retired as ambiguous.
+Where a band sits on its own Card face. Per-face, because the fields that must
+stay legible sit differently on the front and the back.
+
+Previously called a **Placement default**; that term covered only the starting
+geometry and is retired in favour of naming the thing itself.

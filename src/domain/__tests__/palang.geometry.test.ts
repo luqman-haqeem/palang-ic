@@ -24,11 +24,11 @@ describe("bandGeometry", () => {
 
 describe("defaultPlacement", () => {
   it("matches the spec constants for the front face", () => {
-    expect(defaultPlacement("front")).toEqual({ cx: 396, cy: 241, angleDeg: -12, fontSize: 14 });
+    expect(defaultPlacement("front")).toEqual({ cx: 396, cy: 241 });
   });
 
   it("matches the spec constants for the back face", () => {
-    expect(defaultPlacement("back")).toEqual({ cx: 396, cy: 502, angleDeg: -12, fontSize: 14 });
+    expect(defaultPlacement("back")).toEqual({ cx: 396, cy: 502 });
   });
 
   it("puts the band in the lower portion of its own card", () => {

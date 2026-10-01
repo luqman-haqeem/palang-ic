@@ -62,7 +62,8 @@ export function PageStage({
                 key={face}
                 face={face}
                 placement={state.placements[face]}
-                line={state.text.line}
+                style={state.style}
+                line={state.line}
                 selected={selected === face}
                 onSelect={() => onSelect(face)}
                 onDragEnd={(patch) => onDragEnd(face, patch)}

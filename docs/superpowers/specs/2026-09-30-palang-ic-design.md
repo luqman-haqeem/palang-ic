@@ -397,3 +397,62 @@ covers the app shell and font only, never runtime image data.
   its output at all and PDF input becomes immediately necessary.
 - **Recipient acceptance is untested.** Whether a bank accepts a digitally
   palanged copy as readily as a handwritten one is unknown until tried.
+
+---
+
+## Revision — 2026-10-01, after first real use
+
+The first session with the deployed tool produced two pieces of feedback that
+simplify the design. Both supersede decisions above; the original reasoning is
+left in place so the trade-off that was accepted stays visible.
+
+### Angle and text size are shared by both faces
+
+Supersedes the per-face `PalangPlacement` carrying `angleDeg` and `fontSize`.
+A palang is one annotation drawn by one hand; two faces at different angles
+looks like two separate acts. Position stays per-face, because the fields that
+must remain legible sit differently on each side.
+
+`PalangPlacement` is now `{ cx, cy }` and a single session-level `BandStyle`
+holds `{ angleDeg, fontSize }`. The UI has one Band control group plus a
+per-face "reset position".
+
+### One free-text field, no template, no auto-date
+
+Supersedes the structured Recipient + Purpose fields, the
+`UNTUK URUSAN … SAHAJA` template, the auto-appended date, and the whole
+detach / "Reset to template" mechanism.
+
+The user types the palang text and it is drawn verbatim. Whether to name a
+recipient, state a purpose, include a date, or none of those, is the user's
+decision.
+
+**What this gives up, stated plainly:** the original design used structured
+fields specifically so the tool could guarantee a correctly-worded restrictive
+sentence, on the reasoning that a malformed palang "looks marked while granting
+no scope limitation". That guarantee is gone. The only remaining guard is that
+the text cannot be blank — `canExport` still refuses two red lines with nothing
+between them. Wording correctness is now the user's responsibility, which is
+the trade they asked for.
+
+Text renders as typed rather than forced to upper case: the user owns the
+wording, so the tool should not silently rewrite it.
+
+### Export filename is generic
+
+`salinan-{YYYY-MM-DD}.{png|pdf}`, carrying nothing from the palang text.
+Supersedes the recipient slug, and `slugRecipient` is deleted along with it.
+
+This is better than the original: the palang text is now free-form and may name
+a bank or a loan, and a filename is the one part of a Copy that shows up in a
+downloads list or an email attachment line before anyone opens it.
+
+The date is still tracked in session state, solely for this filename, and is
+still refreshed on tab focus so an installed PWA left open across midnight does
+not stamp yesterday.
+
+### Vocabulary
+
+`CONTEXT.md` retires **Recipient**, **Purpose**, **Saved recipient** and
+**Placement default**, and adds **Palang text**, **Saved line**, **Band style**
+and **Placement**.
