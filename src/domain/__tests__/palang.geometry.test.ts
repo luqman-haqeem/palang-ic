@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cardRect } from "@/domain/page";
-import { clampBandCentre, clampCentreToFace, INK } from "@/domain/palang";
+import { clampBandCentre, clampCentreToFace } from "@/domain/palang";
 
 describe("clampBandCentre", () => {
   const rect = cardRect("front");
@@ -48,8 +48,4 @@ describe("clampCentreToFace", () => {
     const once = clampCentreToFace("front", { cx: -50, cy: 9999 });
     expect(clampCentreToFace("front", once)).toEqual(once);
   });
-});
-
-it("uses the spec ink colour", () => {
-  expect(INK).toBe("#9B1C1C");
 });

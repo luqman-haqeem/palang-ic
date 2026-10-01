@@ -9,8 +9,10 @@ import {
   defaultPlacement,
   FONT_MAX,
   FONT_MIN,
+  DEFAULT_INK,
   LENGTH_MAX,
   LENGTH_MIN,
+  normaliseInk,
   type PalangPlacement,
 } from "@/domain/palang";
 
@@ -74,6 +76,7 @@ export function reducer(state: SessionState, action: Action): SessionState {
           angleDeg: clamp(merged.angleDeg, ANGLE_MIN, ANGLE_MAX),
           fontSize: clamp(merged.fontSize, FONT_MIN, FONT_MAX),
           lengthFactor: clamp(merged.lengthFactor, LENGTH_MIN, LENGTH_MAX),
+          ink: normaliseInk(merged.ink, DEFAULT_INK),
         },
       };
     }

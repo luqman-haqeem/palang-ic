@@ -2,11 +2,20 @@ import {
   ANGLE_MAX,
   ANGLE_MIN,
   type BandStyle,
+  DEFAULT_INK,
   FONT_MAX,
   FONT_MIN,
   LENGTH_MAX,
   LENGTH_MIN,
 } from "@/domain/palang";
+
+/** Black is the default; the others are the colours people reach for when they
+ *  want the mark to be obviously not part of the original document. */
+const INK_PRESETS = [
+  { label: "Black", value: DEFAULT_INK },
+  { label: "Dark red", value: "#9b1c1c" },
+  { label: "Navy", value: "#1e3a8a" },
+];
 
 type Props = {
   style: BandStyle;
@@ -44,6 +53,30 @@ export function BandStyleControls({ style, onChange }: Props) {
           className="w-full"
         />
       </label>
+
+      <div className="mt-1 text-xs">
+        <span className="block">Colour</span>
+        <div className="mt-1 flex items-center gap-2">
+          <input
+            type="color"
+            value={style.ink}
+            onChange={(e) => onChange({ ink: e.target.value })}
+            aria-label="Palang colour"
+            className="h-7 w-10 rounded border border-neutral-300"
+          />
+          {INK_PRESETS.map((preset) => (
+            <button
+              key={preset.value}
+              type="button"
+              onClick={() => onChange({ ink: preset.value })}
+              className="rounded border border-neutral-300 px-1.5 py-0.5 text-[11px]"
+              style={{ color: preset.value }}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <label className="block text-xs">
         Text size: {style.fontSize}

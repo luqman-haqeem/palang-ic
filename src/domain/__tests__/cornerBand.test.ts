@@ -10,7 +10,12 @@ import {
 
 describe("DEFAULT_BAND_STYLE", () => {
   it("matches the values tuned against a real MyKad", () => {
-    expect(DEFAULT_BAND_STYLE).toEqual({ angleDeg: -45, fontSize: 13, lengthFactor: 0.55 });
+    expect(DEFAULT_BAND_STYLE).toEqual({
+      angleDeg: -45,
+      fontSize: 13,
+      lengthFactor: 0.55,
+      ink: "#000000",
+    });
   });
 });
 

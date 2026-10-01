@@ -13,6 +13,7 @@ export function formatSettingsSummary(
     `angleDeg ${style.angleDeg}`,
     `lengthFactor ${Number(style.lengthFactor.toFixed(2))}`,
     `fontSize ${style.fontSize}`,
+    `ink ${style.ink}`,
     `front ${pos(placements.front)}`,
     `back ${pos(placements.back)}`,
   ].join(" | ");

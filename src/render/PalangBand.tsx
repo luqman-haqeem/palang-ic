@@ -7,7 +7,6 @@ import {
   clampCentreToFace,
   fitFontSize,
   FONT_FLOOR,
-  INK,
   type PalangPlacement,
 } from "@/domain/palang";
 import { FONT_FAMILY, measureText } from "@/render/measureText";
@@ -61,12 +60,12 @@ export function PalangBand({ face, placement, style, line, selected, onSelect, o
     >
       <Line
         points={[-half, -lineGap / 2, half, -lineGap / 2]}
-        stroke={INK}
+        stroke={style.ink}
         strokeWidth={strokeWidth}
       />
       <Line
         points={[-half, lineGap / 2, half, lineGap / 2]}
-        stroke={INK}
+        stroke={style.ink}
         strokeWidth={strokeWidth}
       />
       <Text
@@ -74,7 +73,7 @@ export function PalangBand({ face, placement, style, line, selected, onSelect, o
         fontFamily={FONT_FAMILY}
         fontStyle="bold"
         fontSize={size}
-        fill={INK}
+        fill={style.ink}
         offsetX={textWidth / 2}
         offsetY={size / 2}
       />

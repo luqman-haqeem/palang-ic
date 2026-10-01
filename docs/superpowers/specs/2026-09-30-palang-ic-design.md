@@ -515,3 +515,27 @@ prints it. During iteration a redeploy to the same URL can be masked by the
 service worker's precache, which cost a test window: the symptom is an apparently
 unchanged app. A visible build ID makes staleness diagnosable rather than
 mysterious.
+
+### Ink is black by default and configurable — 2026-10-01
+
+Supersedes the fixed `INK = "#9B1C1C"` and the reasoning behind it ("dark red so
+it is unmistakably an annotation and not part of the card"). Verified against a
+real card: black reads correctly as ink on a photocopy, and the original
+argument for red was aesthetic rather than practical.
+
+`ink` is now part of `BandStyle`, set with a colour picker plus black / dark red
+/ navy presets under Advanced settings. Values pass through `normaliseInk`,
+which accepts `#rgb` or `#rrggbb` and falls back to black for anything else — an
+invalid colour would otherwise draw an invisible band, which is the worst
+possible failure for this tool. The readout reports the ink so a tuned colour
+can be baked in like the other defaults.
+
+Still red: the PWA theme colour and the app icon, both chosen to match the old
+ink. Left alone deliberately rather than churned.
+
+### Export verified against a real card
+
+The user confirmed a one-sided Copy exports with **no dashed placeholder box** in
+the empty slot. That was the review finding (I3) fixed by reasoning alone, with
+no automated test possible — jsdom has no canvas. It is now confirmed in a real
+browser.
