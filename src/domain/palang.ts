@@ -69,6 +69,23 @@ export function clampBandCentre(
   };
 }
 
+/** Slider bounds for a band's centre: exactly its own card, so the ends of the
+ *  slider are the edges of the card and nothing beyond is reachable. */
+export function placementBounds(face: CardFace): {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+} {
+  const rect = cardRect(face);
+  return {
+    minX: rect.x,
+    maxX: rect.x + rect.width,
+    minY: rect.y,
+    maxY: rect.y + rect.height,
+  };
+}
+
 /** The same clamp, addressed by face, so a Konva `dragBoundFunc` and the reducer
  *  can share one tested implementation. A reducer clamp alone is not enough: for
  *  a controlled react-konva node, a clamped value equal to the one already in

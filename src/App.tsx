@@ -145,15 +145,15 @@ export default function App() {
               style={state.style}
               onChange={(patch) => dispatch({ type: "setStyle", patch })}
             />
-            <div className="flex gap-3">
-              {loadedFaces.map((face) => (
-                <PlacementControls
-                  key={face}
-                  face={face}
-                  onReset={() => dispatch({ type: "resetPlacement", face })}
-                />
-              ))}
-            </div>
+            {loadedFaces.map((face) => (
+              <PlacementControls
+                key={face}
+                face={face}
+                placement={state.placements[face]}
+                onChange={(patch) => dispatch({ type: "setPlacement", face, patch })}
+                onReset={() => dispatch({ type: "resetPlacement", face })}
+              />
+            ))}
             <SettingsReadout style={state.style} placements={state.placements} />
           </>
         )}

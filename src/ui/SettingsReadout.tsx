@@ -34,9 +34,9 @@ export function SettingsReadout({ style, placements }: Props) {
         {copied ? "Copied" : "Copy"}
       </button>
       <p className="mt-1 text-[11px] text-neutral-500">
-        Drag and slide until it looks right, then copy this line to have it baked in as the
-        default.
+        Slide until it looks right, then copy this line to have it baked in as the default.
       </p>
+      <p className="mt-1 font-mono text-[11px] text-neutral-400">build {__BUILD_ID__}</p>
     </details>
   );
 }
