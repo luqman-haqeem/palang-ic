@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { cardRect } from "@/domain/page";
-import { DEFAULT_BAND_STYLE, defaultPlacement, PALANG_PREFIX } from "@/domain/palang";
+import { DEFAULT_BAND_STYLE, defaultPlacement, DEFAULT_PALANG_TEXT } from "@/domain/palang";
 import { canExport, initialState, reducer, type Scan } from "@/state/document";
 import { SAVED_LINES_KEY } from "@/state/savedLines";
 
@@ -11,10 +11,10 @@ const fakeScan = (width = 856, height = 540): Scan =>
 beforeEach(() => localStorage.clear());
 
 describe("initialState", () => {
-  it("starts with no scans, the seeded prefix, default placements and one shared style", () => {
+  it("starts with no scans, the default text, default placements and one shared style", () => {
     const s = initialState(TODAY);
     expect(s.scans).toEqual({});
-    expect(s.line).toBe(PALANG_PREFIX);
+    expect(s.line).toBe(DEFAULT_PALANG_TEXT);
     expect(s.date).toBe(TODAY);
     expect(s.placements.front).toEqual(defaultPlacement("front"));
     expect(s.placements.back).toEqual(defaultPlacement("back"));
@@ -45,12 +45,12 @@ describe("setStyle", () => {
     expect(s.placements.front).toEqual(defaultPlacement("front"));
   });
 
-  it("clamps angle and font size to their ranges", () => {
+  it("clamps angle, font size and length to their ranges", () => {
     const s = reducer(initialState(TODAY), {
       type: "setStyle",
-      patch: { angleDeg: 999, fontSize: 999 },
+      patch: { angleDeg: 999, fontSize: 999, lengthFactor: 999 },
     });
-    expect(s.style).toEqual({ angleDeg: 45, fontSize: 24 });
+    expect(s.style).toEqual({ angleDeg: 45, fontSize: 24, lengthFactor: 1.2 });
   });
 });
 
@@ -119,8 +119,9 @@ describe("canExport", () => {
     expect(canExport(s)).toBe(false);
   });
 
-  it("is false with a scan but no text", () => {
-    const s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
+  it("is false with a scan once the text has been cleared", () => {
+    let s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
+    s = reducer(s, { type: "setLine", line: "" });
     expect(canExport(s)).toBe(false);
   });
 

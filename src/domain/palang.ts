@@ -2,50 +2,57 @@ import { cardRect, type CardFace, type Rect } from "@/domain/page";
 
 export const INK = "#9B1C1C";
 
-/** A starting point for the palang text, not a format. Different banks and
- *  agencies want the wording set out differently, so the tool opens the phrase
- *  and leaves the rest — including whether to name a date — to the user. */
-export const PALANG_PREFIX = "UNTUK URUSAN ";
+/** A complete, usable default — exportable exactly as it stands. Not a format:
+ *  different banks and agencies want the wording set out differently, so this is
+ *  a sensible starting sentence the user overwrites at will. */
+export const DEFAULT_PALANG_TEXT = "UNTUK URUSAN BANK SAHAJA";
 export const ANGLE_MIN = -45;
 export const ANGLE_MAX = 45;
 export const FONT_MIN = 8;
 export const FONT_MAX = 24;
 export const FONT_FLOOR = 6;
-export const BAND_OVERHANG = 1.12;
-export const DEFAULT_ANGLE_DEG = -12;
+export const LENGTH_MIN = 0.25;
+export const LENGTH_MAX = 1.2;
+export const DEFAULT_ANGLE_DEG = 45;
 export const DEFAULT_FONT_SIZE = 14;
+export const DEFAULT_LENGTH_FACTOR = 0.5;
 
-/** Fraction of card height at which the band sits by default. The lower portion
- *  holds the address block, the field least likely to need to stay legible. */
-const BAND_HEIGHT_FRACTION = 0.72;
+/** Where the band's centre sits by default: the top-left corner of the card,
+ *  as a fraction of its width and height. Chosen so a 45-degree half-width
+ *  band falls entirely inside the card. */
+const BAND_X_FRACTION = 0.3;
+const BAND_Y_FRACTION = 0.3;
 
 /** Where a band sits on its own card face. Position is per-face because the
  *  fields to avoid sit differently on the front and the back. */
 export type PalangPlacement = { cx: number; cy: number };
 
-/** Angle and size are shared by both bands: one palang, one hand. */
-export type BandStyle = { angleDeg: number; fontSize: number };
+/** Angle, size and length are shared by both faces: one palang, one hand.
+ *  `lengthFactor` is a multiple of the card width — 0.5 is a corner stroke,
+ *  anything above 1 crosses the whole card and overhangs its edges. */
+export type BandStyle = { angleDeg: number; fontSize: number; lengthFactor: number };
 
 export const DEFAULT_BAND_STYLE: BandStyle = {
   angleDeg: DEFAULT_ANGLE_DEG,
   fontSize: DEFAULT_FONT_SIZE,
+  lengthFactor: DEFAULT_LENGTH_FACTOR,
 };
 
-/** Everything but the stored four values is derived, so the band's proportions
- *  stay locked and no thickness control needs to exist. */
-export function bandGeometry(fontSize: number, cardWidth: number) {
+/** Line gap and stroke width stay derived from font size, so the band's
+ *  proportions are locked and no thickness control needs to exist. */
+export function bandGeometry(fontSize: number, cardWidth: number, lengthFactor: number) {
   return {
     lineGap: fontSize * 1.6,
     strokeWidth: fontSize * 0.12,
-    length: cardWidth * BAND_OVERHANG,
+    length: cardWidth * lengthFactor,
   };
 }
 
 export function defaultPlacement(face: CardFace): PalangPlacement {
   const rect = cardRect(face);
   return {
-    cx: Math.floor(rect.x + rect.width / 2),
-    cy: rect.y + Math.round(rect.height * BAND_HEIGHT_FRACTION),
+    cx: rect.x + Math.round(rect.width * BAND_X_FRACTION),
+    cy: rect.y + Math.round(rect.height * BAND_Y_FRACTION),
   };
 }
 

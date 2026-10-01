@@ -1,5 +1,5 @@
 import type React from "react";
-import { PALANG_PREFIX } from "@/domain/palang";
+import { DEFAULT_PALANG_TEXT } from "@/domain/palang";
 
 type Props = {
   line: string;
@@ -8,17 +8,15 @@ type Props = {
   onForget: (line: string) => void;
 };
 
-/** One free-text field, seeded with a prefix. No template and no auto-date:
+/** One free-text field, seeded with a complete default sentence. No template
+ *  and no auto-date:
  *  different banks and agencies want the wording set out differently, so what
  *  you type is what gets drawn. */
 export function PalangTextField({ line, saved, onChange, onForget }: Props) {
-  // Clicking into a field that holds only the prefix should land the caret after
-  // it, not wherever the tap happened to fall.
-  const caretToEnd = (e: React.FocusEvent<HTMLTextAreaElement>) => {
-    if (line === PALANG_PREFIX) {
-      const end = e.target.value.length;
-      e.target.setSelectionRange(end, end);
-    }
+  // Focusing the untouched default selects it, so typing replaces the whole
+  // sentence instead of landing mid-word.
+  const selectIfUntouched = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    if (line === DEFAULT_PALANG_TEXT) e.target.select();
   };
   return (
     <div>
@@ -27,7 +25,7 @@ export function PalangTextField({ line, saved, onChange, onForget }: Props) {
         <textarea
           value={line}
           onChange={(e) => onChange(e.target.value)}
-          onFocus={caretToEnd}
+          onFocus={selectIfUntouched}
           rows={2}
           placeholder="UNTUK URUSAN PINJAMAN PERIBADI MAYBANK SAHAJA — 01/10/2026"
           className="mt-1 w-full rounded border border-neutral-300 px-2 py-1 text-sm"

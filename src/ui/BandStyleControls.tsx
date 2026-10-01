@@ -1,4 +1,12 @@
-import { ANGLE_MAX, ANGLE_MIN, type BandStyle, FONT_MAX, FONT_MIN } from "@/domain/palang";
+import {
+  ANGLE_MAX,
+  ANGLE_MIN,
+  type BandStyle,
+  FONT_MAX,
+  FONT_MIN,
+  LENGTH_MAX,
+  LENGTH_MIN,
+} from "@/domain/palang";
 
 type Props = {
   style: BandStyle;
@@ -20,6 +28,19 @@ export function BandStyleControls({ style, onChange }: Props) {
           step={1}
           value={style.angleDeg}
           onChange={(e) => onChange({ angleDeg: Number(e.target.value) })}
+          className="w-full"
+        />
+      </label>
+
+      <label className="block text-xs">
+        Length: {Math.round(style.lengthFactor * 100)}% of card width
+        <input
+          type="range"
+          min={LENGTH_MIN}
+          max={LENGTH_MAX}
+          step={0.05}
+          value={style.lengthFactor}
+          onChange={(e) => onChange({ lengthFactor: Number(e.target.value) })}
           className="w-full"
         />
       </label>

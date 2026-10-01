@@ -5,10 +5,12 @@ import {
   type BandStyle,
   clampCentreToFace,
   DEFAULT_BAND_STYLE,
+  DEFAULT_PALANG_TEXT,
   defaultPlacement,
   FONT_MAX,
   FONT_MIN,
-  PALANG_PREFIX,
+  LENGTH_MAX,
+  LENGTH_MIN,
   type PalangPlacement,
 } from "@/domain/palang";
 
@@ -38,7 +40,7 @@ export type Action =
 export function initialState(today: string): SessionState {
   return {
     scans: {},
-    line: PALANG_PREFIX,
+    line: DEFAULT_PALANG_TEXT,
     date: today,
     placements: { front: defaultPlacement("front"), back: defaultPlacement("back") },
     style: { ...DEFAULT_BAND_STYLE },
@@ -71,6 +73,7 @@ export function reducer(state: SessionState, action: Action): SessionState {
         style: {
           angleDeg: clamp(merged.angleDeg, ANGLE_MIN, ANGLE_MAX),
           fontSize: clamp(merged.fontSize, FONT_MIN, FONT_MAX),
+          lengthFactor: clamp(merged.lengthFactor, LENGTH_MIN, LENGTH_MAX),
         },
       };
     }
@@ -98,10 +101,9 @@ export function reducer(state: SessionState, action: Action): SessionState {
 }
 
 /** Blank text would draw two red lines with no sentence between them: a Copy
- *  that looks marked while granting no limit on use. The seeded prefix counts as
- *  blank — on its own it states nothing, so it must not satisfy the guard. */
+ *  that looks marked while granting no limit on use. The default text is a
+ *  complete sentence, so it is exportable as it stands. */
 export function canExport(state: SessionState): boolean {
   const hasScan = Boolean(state.scans.front || state.scans.back);
-  const written = state.line.trim();
-  return hasScan && written !== "" && written !== PALANG_PREFIX.trim();
+  return hasScan && state.line.trim() !== "";
 }

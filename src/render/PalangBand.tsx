@@ -30,7 +30,11 @@ type Props = {
  *  paths call the same tested `clampCentreToFace`. */
 export function PalangBand({ face, placement, style, line, selected, onSelect, onDragEnd }: Props) {
   const { width: cardWidth } = cardSize();
-  const { lineGap, strokeWidth, length } = bandGeometry(style.fontSize, cardWidth);
+  const { lineGap, strokeWidth, length } = bandGeometry(
+    style.fontSize,
+    cardWidth,
+    style.lengthFactor,
+  );
   const size = fitFontSize(line, length * 0.94, style.fontSize, FONT_FLOOR, measureText);
   const textWidth = measureText(line, size);
   const half = length / 2;
