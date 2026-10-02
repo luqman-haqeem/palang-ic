@@ -560,3 +560,29 @@ unlikely.
 
 Applied as Konva `opacity` on the band group, so the two lines and the text fade
 together rather than drifting apart. The readout reports it.
+
+### Scans are clipped to rounded corners — 2026-10-02
+
+A MyKad has rounded corners. A square-cornered scan on a white A4 page reads as
+a screenshot rather than a copy of a card, which undercuts the document.
+
+The radius comes from the same standard as the card size: **ISO/IEC 7810 ID-1,
+3.18mm**, which is 12 logical px at 96dpi. Not an arbitrary design value — the
+card geometry was already being taken from that standard for 85.6 x 54mm, so
+taking the radius from it too keeps one source of truth.
+
+Applied as a Konva `clipFunc` on a group wrapping the image, **clipped to the
+fitted image rect rather than the card slot**. The distinction matters: a scan
+whose aspect ratio differs from the card gets letterboxed inside the slot, and
+clipping the slot would round the slot's corners while leaving the image's own
+corners square inside it.
+
+`clampCornerRadius` caps the radius at half the shorter side. A larger radius
+inverts the rounded-rect path and renders nothing — worth guarding since the
+radius is applied to a fitted rect whose size depends on the scan.
+
+The empty-slot placeholder is rounded too, via `Rect`'s own `cornerRadius`, so
+the preview shows the card shape before anything is loaded.
+
+Path drawn with `arcTo` rather than `roundRect`, which older Safari lacks — and
+Safari is the likely browser for a phone-installed PWA.
