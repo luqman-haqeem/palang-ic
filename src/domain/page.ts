@@ -7,6 +7,12 @@ export const CARD = { widthMm: 85.6, heightMm: 54 } as const;
  *  screenshots rather than copies of a card. */
 export const CARD_CORNER_RADIUS_MM = 3.18;
 export const TOP_MARGIN_MM = 25;
+
+/** Adjustable range for the scan's corner rounding. Square at 0; the true card
+ *  radius sits inside the range so the default is reachable again after a
+ *  change. */
+export const RADIUS_MIN = 0;
+export const RADIUS_MAX = 24;
 export const FACE_GAP_MM = 15;
 
 export type CardFace = "front" | "back";

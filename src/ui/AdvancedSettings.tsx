@@ -1,6 +1,7 @@
 import type { CardFace } from "@/domain/page";
 import type { BandStyle, PalangPlacement } from "@/domain/palang";
 import { BandStyleControls } from "@/ui/BandStyleControls";
+import { CardStyleControls } from "@/ui/CardStyleControls";
 import { PlacementControls } from "@/ui/PlacementControls";
 import { SettingsReadout } from "@/ui/SettingsReadout";
 
@@ -8,7 +9,9 @@ type Props = {
   faces: CardFace[];
   style: BandStyle;
   placements: Record<CardFace, PalangPlacement>;
+  cornerRadius: number;
   onStyleChange: (patch: Partial<BandStyle>) => void;
+  onCornerRadiusChange: (radius: number) => void;
   onPlacementChange: (face: CardFace, patch: Partial<PalangPlacement>) => void;
   onPlacementReset: (face: CardFace) => void;
 };
@@ -20,7 +23,9 @@ export function AdvancedSettings({
   faces,
   style,
   placements,
+  cornerRadius,
   onStyleChange,
+  onCornerRadiusChange,
   onPlacementChange,
   onPlacementReset,
 }: Props) {
@@ -31,6 +36,7 @@ export function AdvancedSettings({
       </summary>
       <div className="space-y-3 p-3 pt-0">
         <BandStyleControls style={style} onChange={onStyleChange} />
+        <CardStyleControls cornerRadius={cornerRadius} onChange={onCornerRadiusChange} />
         {faces.map((face) => (
           <PlacementControls
             key={face}
@@ -40,7 +46,7 @@ export function AdvancedSettings({
             onReset={() => onPlacementReset(face)}
           />
         ))}
-        <SettingsReadout style={style} placements={placements} />
+        <SettingsReadout style={style} placements={placements} cornerRadius={cornerRadius} />
       </div>
     </details>
   );

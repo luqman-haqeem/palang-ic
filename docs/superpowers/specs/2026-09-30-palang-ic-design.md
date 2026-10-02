@@ -586,3 +586,24 @@ the preview shows the card shape before anything is loaded.
 
 Path drawn with `arcTo` rather than `roundRect`, which older Safari lacks — and
 Safari is the likely browser for a phone-installed PWA.
+
+### Corner radius is adjustable — 2026-10-02
+
+The rounding is exposed as a slider under Advanced settings, 0–24 logical px,
+defaulting to the true ID-1 radius of 12. A "Reset to true card radius" button
+returns to the default, and the slider label marks that value as "(true card)"
+so the physically correct setting stays identifiable once moved.
+
+Adjustable because the right answer depends on the scan: one cropped tight to
+the card wants the true radius, while a looser crop or a dark background can look
+better squared off.
+
+`cornerRadius` lives at the top level of `SessionState` rather than inside
+`BandStyle`. It describes the card, not the palang, and `BandStyle` carries the
+"one palang, one hand" meaning that shared angle, length, size, ink and opacity
+all share. Clamped in the reducer to the 0–24 range for the same reason
+`clampCornerRadius` caps at half the shorter side: an out-of-range radius
+inverts the clip path and renders nothing.
+
+The readout reports it alongside the band values, so a tuned radius can be baked
+in like the rest.

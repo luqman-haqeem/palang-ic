@@ -1,7 +1,6 @@
 import type Konva from "konva";
 import { Group, Image as KonvaImage, Rect as KonvaRect } from "react-konva";
 import {
-  cardCornerRadius,
   cardRect,
   clampCornerRadius,
   containFit,
@@ -24,9 +23,10 @@ function roundedRectPath(ctx: Konva.Context, rect: Rect, radius: number): void {
   ctx.closePath();
 }
 
-export function CardSlot({ face, scan }: { face: CardFace; scan?: Scan }) {
+type Props = { face: CardFace; scan?: Scan; radius: number };
+
+export function CardSlot({ face, scan, radius }: Props) {
   const rect = cardRect(face);
-  const radius = cardCornerRadius();
 
   if (!scan) {
     return (

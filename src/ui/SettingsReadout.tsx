@@ -6,12 +6,13 @@ import { formatSettingsSummary } from "@/domain/settingsSummary";
 type Props = {
   style: BandStyle;
   placements: Record<CardFace, PalangPlacement>;
+  cornerRadius: number;
 };
 
 /** Shows the exact numbers behind the current look, so a placement tuned by
  *  dragging can be read off and hardcoded as the default. */
-export function SettingsReadout({ style, placements }: Props) {
-  const summary = formatSettingsSummary(style, placements);
+export function SettingsReadout({ style, placements, cornerRadius }: Props) {
+  const summary = formatSettingsSummary(style, placements, cornerRadius);
   const [copied, setCopied] = useState(false);
 
   async function copy() {

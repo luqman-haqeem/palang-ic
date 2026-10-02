@@ -1,4 +1,4 @@
-import type { CardFace } from "@/domain/page";
+import { cardCornerRadius, type CardFace, RADIUS_MAX, RADIUS_MIN } from "@/domain/page";
 import {
   ANGLE_MAX,
   ANGLE_MIN,
@@ -29,6 +29,8 @@ export type SessionState = {
   date: string;
   placements: Record<CardFace, PalangPlacement>;
   style: BandStyle;
+  /** Corner rounding applied to the scans, in page logical px. */
+  cornerRadius: number;
 };
 
 export type Action =
@@ -37,6 +39,7 @@ export type Action =
   | { type: "setLine"; line: string }
   | { type: "setDate"; date: string }
   | { type: "setStyle"; patch: Partial<BandStyle> }
+  | { type: "setCornerRadius"; radius: number }
   | { type: "setPlacement"; face: CardFace; patch: Partial<PalangPlacement> }
   | { type: "resetPlacement"; face: CardFace }
   | { type: "clearAll"; today: string };
@@ -48,6 +51,7 @@ export function initialState(today: string): SessionState {
     date: today,
     placements: { front: defaultPlacement("front"), back: defaultPlacement("back") },
     style: { ...DEFAULT_BAND_STYLE },
+    cornerRadius: cardCornerRadius(),
   };
 }
 
@@ -83,6 +87,9 @@ export function reducer(state: SessionState, action: Action): SessionState {
         },
       };
     }
+
+    case "setCornerRadius":
+      return { ...state, cornerRadius: clamp(action.radius, RADIUS_MIN, RADIUS_MAX) };
 
     case "setPlacement": {
       const merged = { ...state.placements[action.face], ...action.patch };

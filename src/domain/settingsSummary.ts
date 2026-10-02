@@ -7,6 +7,7 @@ import type { BandStyle, PalangPlacement } from "@/domain/palang";
 export function formatSettingsSummary(
   style: BandStyle,
   placements: Record<CardFace, PalangPlacement>,
+  cornerRadius: number,
 ): string {
   const pos = (p: PalangPlacement) => `${Math.round(p.cx)},${Math.round(p.cy)}`;
   return [
@@ -17,5 +18,6 @@ export function formatSettingsSummary(
     `opacity ${Number(style.opacity.toFixed(2))}`,
     `front ${pos(placements.front)}`,
     `back ${pos(placements.back)}`,
+    `cornerRadius ${cornerRadius}`,
   ].join(" | ");
 }

@@ -142,7 +142,9 @@ export default function App() {
             faces={loadedFaces}
             style={state.style}
             placements={state.placements}
+            cornerRadius={state.cornerRadius}
             onStyleChange={(patch) => dispatch({ type: "setStyle", patch })}
+            onCornerRadiusChange={(radius) => dispatch({ type: "setCornerRadius", radius })}
             onPlacementChange={(face, patch) => dispatch({ type: "setPlacement", face, patch })}
             onPlacementReset={(face) => dispatch({ type: "resetPlacement", face })}
           />
