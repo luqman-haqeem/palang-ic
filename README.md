@@ -1,8 +1,8 @@
 # palang-ic
 
-A browser-local tool that adds a **palang** to copies of a Malaysian
-MyKad: two parallel lines with a restrictive sentence between them, composed
-onto one A4 page and exported as PNG or PDF.
+A browser-local tool that adds a **palang** to copies of a Malaysian MyKad:
+two parallel lines with a restrictive sentence between them, composed onto one
+A4 page and exported as PNG or PDF.
 
 Built for my own use, because the service I was using gates exports behind paid
 tokens for something that is ultimately a canvas and a download.
@@ -21,12 +21,12 @@ the permitted purpose written between them, so the copy cannot be reused for
 anything else.
 
 **A palang is not a watermark.** A watermark obscures the document to deter
-copying. A palang deliberately obscures nothing: the IC number, name, date of birth
-and photo are all meant to stay legible, because the recipient still has to be
-able to verify the card. The whole design follows from
-that one distinction — this tool will not redact, black out, or tile anything,
-and it is the reason the band is short and sits in a corner rather than running
-across the middle.
+copying. A palang deliberately obscures nothing: the IC number, name, date of
+birth and photo are all meant to stay legible, because the recipient still has
+to be able to verify the card. The whole design follows from that one
+distinction — this tool will not redact, black out, or tile anything, and it is
+the reason the band is short and sits in a corner rather than running across the
+middle.
 
 The tool does not enforce legibility for you. Look at the preview.
 
@@ -46,58 +46,6 @@ and nudge with the arrow keys (shift for 10px). Export as PNG or PDF.
 
 Everything else — angle, length, text size, ink colour, opacity, corner radius
 and per-face position — lives under **Advanced settings** as sliders.
-
-## Engineering notes
-
-The interesting problems here were all about correctness under coordinate
-transforms, and the two worst bugs were caught in self-review rather than by a
-user.
-
-**One coordinate system.** The page is A4 at 96 dpi — 794 × 1123 logical px —
-and everything (card slots, band geometry, drag bounds, placement storage) is
-expressed in it. Export is purely a `pixelRatio` multiplication at the edge.
-Mixing mm, CSS px and device px is how this category of app usually breaks.
-
-**Export resolution was window-dependent.** Konva's `toDataURL` multiplies by
-the stage's scale, and the stage scales to fit the viewport — so the exported
-PDF came out at a different resolution depending on how wide the browser window
-happened to be. Verified against `konva/lib/Stage.js`, then fixed by dividing
-the stage scale back out, so export is always 2481 × 3509 px (300 dpi A4)
-regardless of viewport.
-
-**`toISOString()` is the wrong clock.** In UTC+8, the UTC date is *yesterday*
-for the first eight hours of every day, so export filenames would have been
-stamped a day early every morning. `isoToday` is built from local getters and
-the suite pins `TZ=Asia/Kuala_Lumpur`.
-
-**Rounding is a design decision, not a detail.** ID-1 is 85.6 × 54 mm. Rounding
-the mm→px conversion uniformly gives a 324 px card; the spec wanted 323. Page
-offsets round, card dimensions floor, and both rules are written down and tested
-rather than discovered by eye.
-
-**Clip the fitted image, not the slot.** Rounded corners are applied to the
-letterboxed image rect — clipping the card slot instead would leave a scan with
-a different aspect ratio showing square corners inside a rounded frame. Drawn
-with `arcTo` rather than `roundRect` for older Safari.
-
-**Preview chrome must not reach the export.** The selection outline and the
-dashed empty-slot placeholder are found by name across the whole stage, hidden,
-rendered, and restored.
-
-**Geometry checked against the reference, not guessed.** The official sample was
-measured by fitting a line through only the dark pixels falling outside the card
-bounding box — on a white page those are unambiguously band, not card artwork.
-It came out at −43.3° and −43.8° on the two faces, confirming the −45° default.
-
-### Layout
-
-`src/domain/` is dependency-free pure functions — layout maths, band geometry,
-text fitting, clock, filenames — and carries almost all of the 123 tests.
-`src/state/` is a reducer. `src/render/` is Konva and is verified by eye, since
-jsdom has no canvas; the maths it depends on was pushed down into `domain` so it
-could be tested without one.
-
-`CONTEXT.md` is the glossary.
 
 ## Stack
 
