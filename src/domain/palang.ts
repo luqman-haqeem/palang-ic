@@ -1,43 +1,88 @@
 import { cardRect, type CardFace, type Rect } from "@/domain/page";
 
-export const INK = "#9B1C1C";
+/** Black by default: the mark reads as ink on a photocopy. Configurable, since
+ *  some recipients expect a colour that is obviously not part of the original. */
+export const DEFAULT_INK = "#000000";
+
+/** A complete, usable default — exportable exactly as it stands. Not a format:
+ *  different banks and agencies want the wording set out differently, so this is
+ *  a sensible starting sentence the user overwrites at will. */
+export const DEFAULT_PALANG_TEXT = "UNTUK URUSAN BANK SAHAJA";
 export const ANGLE_MIN = -45;
 export const ANGLE_MAX = 45;
 export const FONT_MIN = 8;
 export const FONT_MAX = 24;
 export const FONT_FLOOR = 6;
-export const BAND_OVERHANG = 1.12;
-export const DEFAULT_ANGLE_DEG = -12;
-export const DEFAULT_FONT_SIZE = 14;
+/** Never 0: a fully transparent band renders a Copy that looks unmarked while
+ *  the user believes it is marked. */
+export const OPACITY_MIN = 0.15;
+export const OPACITY_MAX = 1;
+export const DEFAULT_OPACITY = 1;
+export const LENGTH_MIN = 0.25;
+export const LENGTH_MAX = 1.2;
+export const DEFAULT_ANGLE_DEG = -45;
+export const DEFAULT_FONT_SIZE = 13;
+export const DEFAULT_LENGTH_FACTOR = 0.55;
 
-/** Fraction of card height at which the band sits by default. The lower portion
- *  holds the address block, the field least likely to need to stay legible. */
-const BAND_HEIGHT_FRACTION = 0.72;
+/** Where the band's centre sits by default, as a fraction of card width and
+ *  height. Tuned by hand against a real MyKad so the band crosses the top-left
+ *  corner clear of the photo, name, IC number and date of birth. The band runs
+ *  off the corner at this position, which is intended — a palang is a stroke
+ *  drawn across a copy, not a graphic fitted inside it. */
+const BAND_X_FRACTION = 0.105;
+const BAND_Y_FRACTION = 0.196;
 
-export type PalangPlacement = {
-  cx: number;
-  cy: number;
+/** Where a band sits on its own card face. Position is per-face because the
+ *  fields to avoid sit differently on the front and the back. */
+export type PalangPlacement = { cx: number; cy: number };
+
+/** Angle, size and length are shared by both faces: one palang, one hand.
+ *  `lengthFactor` is a multiple of the card width — 0.5 is a corner stroke,
+ *  anything above 1 crosses the whole card and overhangs its edges. */
+export type BandStyle = {
   angleDeg: number;
   fontSize: number;
+  lengthFactor: number;
+  ink: string;
+  opacity: number;
 };
 
-/** Everything but the stored four values is derived, so the band's proportions
- *  stay locked and no thickness control needs to exist. */
-export function bandGeometry(fontSize: number, cardWidth: number) {
+/** Accepts `#rgb` or `#rrggbb`, lowercased; anything else falls back. A bad
+ *  value would draw an invisible band or none at all, so it must never reach
+ *  the canvas. */
+export function normaliseInk(value: string, fallback: string): string {
+  const hex = value.trim().toLowerCase();
+  if (/^#[0-9a-f]{6}$/.test(hex)) return hex;
+  if (/^#[0-9a-f]{3}$/.test(hex)) {
+    const [, r, g, b] = hex;
+    return `#${r}${r}${g}${g}${b}${b}`;
+  }
+  return fallback;
+}
+
+export const DEFAULT_BAND_STYLE: BandStyle = {
+  angleDeg: DEFAULT_ANGLE_DEG,
+  fontSize: DEFAULT_FONT_SIZE,
+  lengthFactor: DEFAULT_LENGTH_FACTOR,
+  ink: DEFAULT_INK,
+  opacity: DEFAULT_OPACITY,
+};
+
+/** Line gap and stroke width stay derived from font size, so the band's
+ *  proportions are locked and no thickness control needs to exist. */
+export function bandGeometry(fontSize: number, cardWidth: number, lengthFactor: number) {
   return {
     lineGap: fontSize * 1.6,
     strokeWidth: fontSize * 0.12,
-    length: cardWidth * BAND_OVERHANG,
+    length: cardWidth * lengthFactor,
   };
 }
 
 export function defaultPlacement(face: CardFace): PalangPlacement {
   const rect = cardRect(face);
   return {
-    cx: Math.floor(rect.x + rect.width / 2),
-    cy: rect.y + Math.round(rect.height * BAND_HEIGHT_FRACTION),
-    angleDeg: DEFAULT_ANGLE_DEG,
-    fontSize: DEFAULT_FONT_SIZE,
+    cx: rect.x + Math.round(rect.width * BAND_X_FRACTION),
+    cy: rect.y + Math.round(rect.height * BAND_Y_FRACTION),
   };
 }
 
@@ -54,6 +99,23 @@ export function clampBandCentre(
   };
 }
 
+/** Slider bounds for a band's centre: exactly its own card, so the ends of the
+ *  slider are the edges of the card and nothing beyond is reachable. */
+export function placementBounds(face: CardFace): {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+} {
+  const rect = cardRect(face);
+  return {
+    minX: rect.x,
+    maxX: rect.x + rect.width,
+    minY: rect.y,
+    maxY: rect.y + rect.height,
+  };
+}
+
 /** The same clamp, addressed by face, so a Konva `dragBoundFunc` and the reducer
  *  can share one tested implementation. A reducer clamp alone is not enough: for
  *  a controlled react-konva node, a clamped value equal to the one already in
@@ -63,27 +125,6 @@ export function clampCentreToFace(
   centre: { cx: number; cy: number },
 ): { cx: number; cy: number } {
   return clampBandCentre(centre, cardRect(face));
-}
-
-export type PalangText = {
-  recipient: string;
-  purpose: string;
-  date: string; // ISO yyyy-mm-dd
-  line: string;
-  detached: boolean;
-};
-
-/** Splits the ISO string rather than parsing it. Going through `Date` would make
- *  the rendered day depend on the runtime timezone. */
-export function formatDate(iso: string): string {
-  const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
-}
-
-export function composeLine(t: { recipient: string; purpose: string; date: string }): string {
-  const purpose = t.purpose.trim().toUpperCase();
-  const recipient = t.recipient.trim().toUpperCase();
-  return `UNTUK URUSAN ${purpose} ${recipient} SAHAJA — ${formatDate(t.date)}`;
 }
 
 /** Shrinks the text until it fits the band, with a floor below which it is

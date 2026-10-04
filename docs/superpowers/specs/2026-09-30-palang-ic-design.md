@@ -397,3 +397,213 @@ covers the app shell and font only, never runtime image data.
   its output at all and PDF input becomes immediately necessary.
 - **Recipient acceptance is untested.** Whether a bank accepts a digitally
   palanged copy as readily as a handwritten one is unknown until tried.
+
+---
+
+## Revision — 2026-10-01, after first real use
+
+The first session with the deployed tool produced two pieces of feedback that
+simplify the design. Both supersede decisions above; the original reasoning is
+left in place so the trade-off that was accepted stays visible.
+
+### Angle and text size are shared by both faces
+
+Supersedes the per-face `PalangPlacement` carrying `angleDeg` and `fontSize`.
+A palang is one annotation drawn by one hand; two faces at different angles
+looks like two separate acts. Position stays per-face, because the fields that
+must remain legible sit differently on each side.
+
+`PalangPlacement` is now `{ cx, cy }` and a single session-level `BandStyle`
+holds `{ angleDeg, fontSize }`. The UI has one Band control group plus a
+per-face "reset position".
+
+### One free-text field, no template, no auto-date
+
+Supersedes the structured Recipient + Purpose fields, the
+`UNTUK URUSAN … SAHAJA` template, the auto-appended date, and the whole
+detach / "Reset to template" mechanism.
+
+The user types the palang text and it is drawn verbatim. Whether to name a
+recipient, state a purpose, include a date, or none of those, is the user's
+decision.
+
+**What this gives up, stated plainly:** the original design used structured
+fields specifically so the tool could guarantee a correctly-worded restrictive
+sentence, on the reasoning that a malformed palang "looks marked while granting
+no scope limitation". That guarantee is gone. The only remaining guard is that
+the text cannot be blank — `canExport` still refuses two red lines with nothing
+between them. Wording correctness is now the user's responsibility, which is
+the trade they asked for.
+
+Text renders as typed rather than forced to upper case: the user owns the
+wording, so the tool should not silently rewrite it.
+
+**The field is seeded with a prefix**, `PALANG_PREFIX = "UNTUK URUSAN "`, as a
+starting point rather than a format. The user's reason for rejecting a fixed
+template is the operative one: different banks and agencies want the wording set
+out differently, so hardcoding one format makes the tool harder to use, not
+safer.
+
+Because the field is seeded, the blank-text guard has to be tighter than
+`!== ""`: the prefix on its own states nothing, so `canExport` treats
+prefix-only text as empty. Wording that does not use the prefix at all is
+accepted, since the prefix is a nudge and not a rule. Focusing a field that
+holds only the prefix puts the caret after it.
+
+### Export filename is generic
+
+`salinan-{YYYY-MM-DD}.{png|pdf}`, carrying nothing from the palang text.
+Supersedes the recipient slug, and `slugRecipient` is deleted along with it.
+
+This is better than the original: the palang text is now free-form and may name
+a bank or a loan, and a filename is the one part of a Copy that shows up in a
+downloads list or an email attachment line before anyone opens it.
+
+The date is still tracked in session state, solely for this filename, and is
+still refreshed on tab focus so an installed PWA left open across midnight does
+not stamp yesterday.
+
+### Vocabulary
+
+`CONTEXT.md` retires **Recipient**, **Purpose**, **Saved recipient** and
+**Placement default**, and adds **Palang text**, **Saved line**, **Band style**
+and **Placement**.
+
+### Band form and defaults, tuned against a real card — 2026-10-01
+
+The band is no longer a full-width horizontal stroke. It is a **corner palang**:
+a shorter stroke across the top-left of the card, at a steep angle.
+
+Defaults, measured by the user with the in-app sliders rather than guessed:
+
+| Setting | Value |
+|---|---|
+| `angleDeg` | −45 |
+| `lengthFactor` | 0.55 (of card width) |
+| `fontSize` | 13 |
+| centre offset within card | 34px right, 40px down (`BAND_X_FRACTION` 0.105, `BAND_Y_FRACTION` 0.196) |
+
+This supersedes the original "band across the lower third at −12°, overhanging
+both edges", and with it the spec's top risk — the placement constant is now
+measured, not reasoned from memory.
+
+**The band deliberately runs off the top-left corner** at these values. That is
+intended: a palang is a stroke drawn across a copy, not a graphic fitted inside
+it. The test that asserted the whole band stayed within the card has been
+replaced by one asserting the overhang and that only the *centre* is clamped.
+
+`lengthFactor` is now part of `BandStyle` and adjustable, 0.25–1.2. At 1.2 the
+old full-width-with-overhang look is still reachable, so the corner form is a
+default rather than a constraint.
+
+The user's front and back offsets differed by 1px (40 and 39). Normalised to a
+single shared offset, on the grounds that 1px at 96dpi is 0.26mm and is slider
+noise rather than intent. Per-face positions remain independently adjustable.
+
+### Controls live under "Advanced settings"
+
+The angle, length, text-size and per-face position sliders, plus the values
+readout, are collapsed behind a disclosure. The defaults are tuned, so a normal
+use is: drop two scans, check the text, export. The sliders exist for the copy a
+recipient wants marked differently — and existed in the first place because
+dragging a small band with a thumb on a phone is fiddly.
+
+### A build ID is shown in the readout
+
+`vite.config.ts` injects `__BUILD_ID__` (month-day hour:minute) and the readout
+prints it. During iteration a redeploy to the same URL can be masked by the
+service worker's precache, which cost a test window: the symptom is an apparently
+unchanged app. A visible build ID makes staleness diagnosable rather than
+mysterious.
+
+### Ink is black by default and configurable — 2026-10-01
+
+Supersedes the fixed `INK = "#9B1C1C"` and the reasoning behind it ("dark red so
+it is unmistakably an annotation and not part of the card"). Verified against a
+real card: black reads correctly as ink on a photocopy, and the original
+argument for red was aesthetic rather than practical.
+
+`ink` is now part of `BandStyle`, set with a colour picker plus black / dark red
+/ navy presets under Advanced settings. Values pass through `normaliseInk`,
+which accepts `#rgb` or `#rrggbb` and falls back to black for anything else — an
+invalid colour would otherwise draw an invisible band, which is the worst
+possible failure for this tool. The readout reports the ink so a tuned colour
+can be baked in like the other defaults.
+
+Still red: the PWA theme colour and the app icon, both chosen to match the old
+ink. Left alone deliberately rather than churned.
+
+### Export verified against a real card
+
+The user confirmed a one-sided Copy exports with **no dashed placeholder box** in
+the empty slot. That was the review finding (I3) fixed by reasoning alone, with
+no automated test possible — jsdom has no canvas. It is now confirmed in a real
+browser.
+
+### Colour swatches and opacity — 2026-10-01
+
+The ink presets render as **colour swatches** rather than coloured text labels,
+with the active one ringed. A swatch shows the colour; a label describes it, and
+for three colours the description was doing no work. Each carries a `title` and
+`aria-label` so the name is still available.
+
+**Opacity is adjustable**, 0.15–1, defaulting to **1**. The default remains fully
+opaque for the reason the original design gave — a palang is ink, and
+transparency reads as a digital overlay added after the fact, which invites the
+recipient to doubt it. But a faded band is sometimes wanted where the underlying
+print must stay readable through the mark, so the control exists.
+
+The floor is 0.15 rather than 0, deliberately: a fully transparent band renders a
+Copy that looks unmarked while the user believes it is marked, which is the same
+failure class as blank text. Reaching it must be impossible, not merely
+unlikely.
+
+Applied as Konva `opacity` on the band group, so the two lines and the text fade
+together rather than drifting apart. The readout reports it.
+
+### Scans are clipped to rounded corners — 2026-10-02
+
+A MyKad has rounded corners. A square-cornered scan on a white A4 page reads as
+a screenshot rather than a copy of a card, which undercuts the document.
+
+The radius comes from the same standard as the card size: **ISO/IEC 7810 ID-1,
+3.18mm**, which is 12 logical px at 96dpi. Not an arbitrary design value — the
+card geometry was already being taken from that standard for 85.6 x 54mm, so
+taking the radius from it too keeps one source of truth.
+
+Applied as a Konva `clipFunc` on a group wrapping the image, **clipped to the
+fitted image rect rather than the card slot**. The distinction matters: a scan
+whose aspect ratio differs from the card gets letterboxed inside the slot, and
+clipping the slot would round the slot's corners while leaving the image's own
+corners square inside it.
+
+`clampCornerRadius` caps the radius at half the shorter side. A larger radius
+inverts the rounded-rect path and renders nothing — worth guarding since the
+radius is applied to a fitted rect whose size depends on the scan.
+
+The empty-slot placeholder is rounded too, via `Rect`'s own `cornerRadius`, so
+the preview shows the card shape before anything is loaded.
+
+Path drawn with `arcTo` rather than `roundRect`, which older Safari lacks — and
+Safari is the likely browser for a phone-installed PWA.
+
+### Corner radius is adjustable — 2026-10-02
+
+The rounding is exposed as a slider under Advanced settings, 0–24 logical px,
+defaulting to the true ID-1 radius of 12. A "Reset to true card radius" button
+returns to the default, and the slider label marks that value as "(true card)"
+so the physically correct setting stays identifiable once moved.
+
+Adjustable because the right answer depends on the scan: one cropped tight to
+the card wants the true radius, while a looser crop or a dark background can look
+better squared off.
+
+`cornerRadius` lives at the top level of `SessionState` rather than inside
+`BandStyle`. It describes the card, not the palang, and `BandStyle` carries the
+"one palang, one hand" meaning that shared angle, length, size, ink and opacity
+all share. Clamped in the reducer to the 0–24 range for the same reason
+`clampCornerRadius` caps at half the shorter side: an out-of-range radius
+inverts the clip path and renders nothing.
+
+The readout reports it alongside the band values, so a tuned radius can be baked
+in like the rest.

@@ -3,10 +3,10 @@ import { Group, Line, Text } from "react-konva";
 import { cardSize, type CardFace } from "@/domain/page";
 import {
   bandGeometry,
+  type BandStyle,
   clampCentreToFace,
   fitFontSize,
   FONT_FLOOR,
-  INK,
   type PalangPlacement,
 } from "@/domain/palang";
 import { FONT_FAMILY, measureText } from "@/render/measureText";
@@ -14,6 +14,7 @@ import { FONT_FAMILY, measureText } from "@/render/measureText";
 type Props = {
   face: CardFace;
   placement: PalangPlacement;
+  style: BandStyle;
   line: string;
   selected: boolean;
   onSelect: () => void;
@@ -26,10 +27,14 @@ type Props = {
  *  x/y prop whose value is unchanged, so a reducer clamp that returns the value
  *  already in state would leave the band sitting where it was dropped. Both
  *  paths call the same tested `clampCentreToFace`. */
-export function PalangBand({ face, placement, line, selected, onSelect, onDragEnd }: Props) {
+export function PalangBand({ face, placement, style, line, selected, onSelect, onDragEnd }: Props) {
   const { width: cardWidth } = cardSize();
-  const { lineGap, strokeWidth, length } = bandGeometry(placement.fontSize, cardWidth);
-  const size = fitFontSize(line, length * 0.94, placement.fontSize, FONT_FLOOR, measureText);
+  const { lineGap, strokeWidth, length } = bandGeometry(
+    style.fontSize,
+    cardWidth,
+    style.lengthFactor,
+  );
+  const size = fitFontSize(line, length * 0.94, style.fontSize, FONT_FLOOR, measureText);
   const textWidth = measureText(line, size);
   const half = length / 2;
 
@@ -37,7 +42,8 @@ export function PalangBand({ face, placement, line, selected, onSelect, onDragEn
     <Group
       x={placement.cx}
       y={placement.cy}
-      rotation={placement.angleDeg}
+      rotation={style.angleDeg}
+      opacity={style.opacity}
       draggable
       dragBoundFunc={(pos) => {
         const clamped = clampCentreToFace(face, { cx: pos.x, cy: pos.y });
@@ -55,12 +61,12 @@ export function PalangBand({ face, placement, line, selected, onSelect, onDragEn
     >
       <Line
         points={[-half, -lineGap / 2, half, -lineGap / 2]}
-        stroke={INK}
+        stroke={style.ink}
         strokeWidth={strokeWidth}
       />
       <Line
         points={[-half, lineGap / 2, half, lineGap / 2]}
-        stroke={INK}
+        stroke={style.ink}
         strokeWidth={strokeWidth}
       />
       <Text
@@ -68,7 +74,7 @@ export function PalangBand({ face, placement, line, selected, onSelect, onDragEn
         fontFamily={FONT_FAMILY}
         fontStyle="bold"
         fontSize={size}
-        fill={INK}
+        fill={style.ink}
         offsetX={textWidth / 2}
         offsetY={size / 2}
       />

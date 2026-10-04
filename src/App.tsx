@@ -6,12 +6,12 @@ import type { CardFace } from "@/domain/page";
 import { buildPdfBlob } from "@/export/buildPdf";
 import { downloadBlob, downloadDataUrl, renderToDataUrl } from "@/export/renderToDataUrl";
 import { canExport, initialState, reducer } from "@/state/document";
-import { forget, loadSaved, remember } from "@/state/savedRecipients";
+import { forgetLine, loadLines, rememberLine } from "@/state/savedLines";
 import { PageStage } from "@/render/PageStage";
+import { AdvancedSettings } from "@/ui/AdvancedSettings";
 import { Dropzone } from "@/ui/Dropzone";
 import { ExportBar } from "@/ui/ExportBar";
-import { PlacementControls } from "@/ui/PlacementControls";
-import { TextFields } from "@/ui/TextFields";
+import { PalangTextField } from "@/ui/PalangTextField";
 
 const FACES: CardFace[] = ["front", "back"];
 const today = () => isoToday(new Date());
@@ -19,7 +19,7 @@ const today = () => isoToday(new Date());
 export default function App() {
   const [state, dispatch] = useReducer(reducer, today(), initialState);
   const [selected, setSelected] = useState<CardFace | null>(null);
-  const [saved, setSaved] = useState(loadSaved);
+  const [saved, setSaved] = useState(loadLines);
   const [error, setError] = useState<string | null>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
 
@@ -27,19 +27,15 @@ export default function App() {
     const stage = stageRef.current;
     if (!stage) return;
     try {
-      const filename = exportFilename(state.text.recipient, state.text.date, ext);
+      const filename = exportFilename(state.date, ext);
       if (ext === "png") {
         const url = renderToDataUrl(stage, { mimeType: "image/png" });
         downloadDataUrl(url, filename);
       } else {
-        const jpeg = renderToDataUrl(stage, {
-          mimeType: "image/jpeg",
-          quality: 0.92,
-        });
+        const jpeg = renderToDataUrl(stage, { mimeType: "image/jpeg", quality: 0.92 });
         downloadBlob(buildPdfBlob(jpeg), filename);
       }
-      setSaved(remember("recipient", state.text.recipient));
-      setSaved(remember("purpose", state.text.purpose));
+      setSaved(rememberLine(state.line));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "The export failed.");
@@ -47,7 +43,7 @@ export default function App() {
   }
 
   // An installed PWA can sit open across midnight; re-read the date whenever the
-  // tab becomes visible again so a Copy is never stamped with yesterday.
+  // tab becomes visible so the filename is never stamped with yesterday.
   useEffect(() => {
     const refresh = () => {
       if (document.visibilityState === "visible") {
@@ -90,6 +86,8 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, [selected, state.placements]);
 
+  const loadedFaces = FACES.filter((face) => state.scans[face]);
+
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 p-4 lg:flex-row">
       <section className="flex-1">
@@ -106,8 +104,7 @@ export default function App() {
         <div>
           <h1 className="text-lg font-semibold">palang-ic</h1>
           <p className="mt-1 text-xs text-neutral-500">
-            Nothing leaves this device. Keep the palang clear of the photo, name, IC number and
-            date of birth.
+            Nothing leaves this device. A reload clears the session.
           </p>
         </div>
 
@@ -133,31 +130,32 @@ export default function App() {
           ))}
         </div>
 
-        <TextFields
-          text={state.text}
+        <PalangTextField
+          line={state.line}
           saved={saved}
-          onField={(field, value) => dispatch({ type: "setField", field, value })}
-          onEditLine={(line) => dispatch({ type: "editLine", line })}
-          onResetLine={() => dispatch({ type: "resetLine" })}
-          onForget={(field, value) => setSaved(forget(field, value))}
+          onChange={(line) => dispatch({ type: "setLine", line })}
+          onForget={(line) => setSaved(forgetLine(line))}
         />
 
-        {FACES.filter((face) => state.scans[face]).map((face) => (
-          <PlacementControls
-            key={face}
-            face={face}
-            placement={state.placements[face]}
-            onChange={(patch) => dispatch({ type: "setPlacement", face, patch })}
-            onReset={() => dispatch({ type: "resetPlacement", face })}
+        {loadedFaces.length > 0 && (
+          <AdvancedSettings
+            faces={loadedFaces}
+            style={state.style}
+            placements={state.placements}
+            cornerRadius={state.cornerRadius}
+            onStyleChange={(patch) => dispatch({ type: "setStyle", patch })}
+            onCornerRadiusChange={(radius) => dispatch({ type: "setCornerRadius", radius })}
+            onPlacementChange={(face, patch) => dispatch({ type: "setPlacement", face, patch })}
+            onPlacementReset={(face) => dispatch({ type: "resetPlacement", face })}
           />
-        ))}
+        )}
 
         <ExportBar
           disabled={!canExport(state)}
           disabledReason={
-            !state.scans.front && !state.scans.back
+            loadedFaces.length === 0
               ? "Add at least one scan."
-              : "Fill in both purpose and recipient — a palang with an empty purpose grants no limit on use."
+              : "Write the palang text — an empty band grants no limit on use."
           }
           onExportPng={() => exportCopy("png")}
           onExportPdf={() => exportCopy("pdf")}

@@ -52,7 +52,12 @@ export function PageStage({
         <Layer>
           <Rect x={0} y={0} width={PAGE.widthPx} height={PAGE.heightPx} fill="#ffffff" />
           {FACES.map((face) => (
-            <CardSlot key={face} face={face} scan={state.scans[face]} />
+            <CardSlot
+              key={face}
+              face={face}
+              scan={state.scans[face]}
+              radius={state.cornerRadius}
+            />
           ))}
         </Layer>
         <Layer>
@@ -62,7 +67,8 @@ export function PageStage({
                 key={face}
                 face={face}
                 placement={state.placements[face]}
-                line={state.text.line}
+                style={state.style}
+                line={state.line}
                 selected={selected === face}
                 onSelect={() => onSelect(face)}
                 onDragEnd={(patch) => onDragEnd(face, patch)}

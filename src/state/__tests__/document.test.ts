@@ -1,85 +1,98 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { cardRect } from "@/domain/page";
-import { defaultPlacement } from "@/domain/palang";
+import { DEFAULT_BAND_STYLE, defaultPlacement, DEFAULT_PALANG_TEXT } from "@/domain/palang";
 import { canExport, initialState, reducer, type Scan } from "@/state/document";
-import { SAVED_RECIPIENTS_KEY } from "@/state/savedRecipients";
+import { SAVED_LINES_KEY } from "@/state/savedLines";
 
-const TODAY = "2026-09-30";
+const TODAY = "2026-10-01";
 const fakeScan = (width = 856, height = 540): Scan =>
   ({ width, height, bitmap: {} as ImageBitmap });
 
 beforeEach(() => localStorage.clear());
 
 describe("initialState", () => {
-  it("starts with no scans and default placements", () => {
+  it("starts with no scans, the default text, default placements and one shared style", () => {
     const s = initialState(TODAY);
     expect(s.scans).toEqual({});
+    expect(s.line).toBe(DEFAULT_PALANG_TEXT);
+    expect(s.date).toBe(TODAY);
     expect(s.placements.front).toEqual(defaultPlacement("front"));
     expect(s.placements.back).toEqual(defaultPlacement("back"));
-  });
-
-  it("starts attached to the template", () => {
-    expect(initialState(TODAY).text.detached).toBe(false);
+    expect(s.style).toEqual(DEFAULT_BAND_STYLE);
   });
 });
 
-describe("text fields and detaching", () => {
-  it("recomposes the line when a field changes", () => {
-    let s = initialState(TODAY);
-    s = reducer(s, { type: "setField", field: "recipient", value: "Maybank" });
-    s = reducer(s, { type: "setField", field: "purpose", value: "pinjaman peribadi" });
-    expect(s.text.line).toBe("UNTUK URUSAN PINJAMAN PERIBADI MAYBANK SAHAJA — 30/09/2026");
+describe("setLine", () => {
+  it("stores the text exactly as typed, imposing no template", () => {
+    const s = reducer(initialState(TODAY), {
+      type: "setLine",
+      line: "untuk urusan pinjaman Maybank sahaja",
+    });
+    expect(s.line).toBe("untuk urusan pinjaman Maybank sahaja");
   });
 
-  it("detaches on the first manual edit", () => {
-    let s = initialState(TODAY);
-    s = reducer(s, { type: "editLine", line: "CUSTOM WORDING" });
-    expect(s.text.detached).toBe(true);
-    expect(s.text.line).toBe("CUSTOM WORDING");
-  });
-
-  it("stops recomposing once detached, so a manual edit survives a field change", () => {
-    let s = initialState(TODAY);
-    s = reducer(s, { type: "editLine", line: "CUSTOM WORDING" });
-    s = reducer(s, { type: "setField", field: "recipient", value: "Celcom" });
-    expect(s.text.line).toBe("CUSTOM WORDING");
-    expect(s.text.recipient).toBe("Celcom");
-  });
-
-  it("recomposes and reattaches on reset", () => {
-    let s = initialState(TODAY);
-    s = reducer(s, { type: "setField", field: "recipient", value: "Maybank" });
-    s = reducer(s, { type: "setField", field: "purpose", value: "urusan telco" });
-    s = reducer(s, { type: "editLine", line: "CUSTOM" });
-    s = reducer(s, { type: "resetLine" });
-    expect(s.text.detached).toBe(false);
-    expect(s.text.line).toContain("MAYBANK SAHAJA");
+  it("does not append a date — the user decides whether to include one", () => {
+    const s = reducer(initialState(TODAY), { type: "setLine", line: "UNTUK BANK SAHAJA" });
+    expect(s.line).toBe("UNTUK BANK SAHAJA");
+    expect(s.line).not.toContain("2026");
   });
 });
 
-describe("setDate", () => {
-  it("recomposes the line with the new date while attached", () => {
-    let s = initialState("2026-09-30");
-    s = reducer(s, { type: "setField", field: "recipient", value: "Maybank" });
-    s = reducer(s, { type: "setField", field: "purpose", value: "urusan telco" });
-    s = reducer(s, { type: "setDate", date: "2026-10-01" });
-    expect(s.text.date).toBe("2026-10-01");
-    expect(s.text.line).toContain("01/10/2026");
+describe("setStyle", () => {
+  it("applies one angle to both faces", () => {
+    const s = reducer(initialState(TODAY), { type: "setStyle", patch: { angleDeg: -30 } });
+    expect(s.style.angleDeg).toBe(-30);
+    expect(s.placements.front).toEqual(defaultPlacement("front"));
   });
 
-  it("leaves a hand-edited line alone", () => {
-    let s = initialState("2026-09-30");
-    s = reducer(s, { type: "editLine", line: "CUSTOM" });
-    s = reducer(s, { type: "setDate", date: "2026-10-01" });
-    expect(s.text.line).toBe("CUSTOM");
-    expect(s.text.date).toBe("2026-10-01");
+  it("clamps angle, font size and length to their ranges", () => {
+    const s = reducer(initialState(TODAY), {
+      type: "setStyle",
+      patch: { angleDeg: 999, fontSize: 999, lengthFactor: 999 },
+    });
+    expect(s.style).toEqual({
+      angleDeg: 45,
+      fontSize: 24,
+      lengthFactor: 1.2,
+      ink: "#000000",
+      opacity: 1,
+    });
+  });
+});
+
+describe("placements", () => {
+  it("clamps a dragged centre to its own card", () => {
+    const s = reducer(initialState(TODAY), {
+      type: "setPlacement",
+      face: "front",
+      patch: { cx: -999, cy: -999 },
+    });
+    const rect = cardRect("front");
+    expect(s.placements.front).toEqual({ cx: rect.x, cy: rect.y });
+  });
+
+  it("moves one face without moving the other", () => {
+    const s = reducer(initialState(TODAY), {
+      type: "setPlacement",
+      face: "back",
+      patch: { cx: 300 },
+    });
+    expect(s.placements.back.cx).toBe(300);
+    expect(s.placements.front).toEqual(defaultPlacement("front"));
+  });
+
+  it("resets only the requested face", () => {
+    let s = reducer(initialState(TODAY), { type: "setPlacement", face: "front", patch: { cx: 300 } });
+    s = reducer(s, { type: "setPlacement", face: "back", patch: { cx: 300 } });
+    s = reducer(s, { type: "resetPlacement", face: "front" });
+    expect(s.placements.front).toEqual(defaultPlacement("front"));
+    expect(s.placements.back.cx).toBe(300);
   });
 });
 
 describe("scans", () => {
-  it("adds and removes a scan for one face without touching the other", () => {
-    let s = initialState(TODAY);
-    s = reducer(s, { type: "setScan", face: "front", scan: fakeScan() });
+  it("adds and removes one face without touching the other", () => {
+    let s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
     s = reducer(s, { type: "setScan", face: "back", scan: fakeScan() });
     s = reducer(s, { type: "removeScan", face: "back" });
     expect(s.scans.front).toBeDefined();
@@ -87,105 +100,69 @@ describe("scans", () => {
   });
 
   it("keeps a face's placement when its scan is replaced", () => {
-    let s = initialState(TODAY);
-    s = reducer(s, { type: "setPlacement", face: "front", patch: { angleDeg: -30 } });
+    let s = reducer(initialState(TODAY), { type: "setPlacement", face: "front", patch: { cx: 300 } });
     s = reducer(s, { type: "setScan", face: "front", scan: fakeScan() });
-    expect(s.placements.front.angleDeg).toBe(-30);
+    expect(s.placements.front.cx).toBe(300);
   });
 });
 
-describe("placements", () => {
-  it("clamps a dragged centre to its own card", () => {
-    let s = initialState(TODAY);
-    s = reducer(s, { type: "setPlacement", face: "front", patch: { cx: -999, cy: -999 } });
-    const rect = cardRect("front");
-    expect(s.placements.front.cx).toBe(rect.x);
-    expect(s.placements.front.cy).toBe(rect.y);
+describe("setDate", () => {
+  it("updates the date used for the filename", () => {
+    const s = reducer(initialState("2026-09-30"), { type: "setDate", date: "2026-10-01" });
+    expect(s.date).toBe("2026-10-01");
   });
 
-  it("clamps angle and font size to their ranges", () => {
-    let s = initialState(TODAY);
-    s = reducer(s, { type: "setPlacement", face: "back", patch: { angleDeg: 999, fontSize: 999 } });
-    expect(s.placements.back.angleDeg).toBe(45);
-    expect(s.placements.back.fontSize).toBe(24);
-  });
-
-  it("resets only the requested face", () => {
-    let s = initialState(TODAY);
-    s = reducer(s, { type: "setPlacement", face: "front", patch: { angleDeg: -40 } });
-    s = reducer(s, { type: "setPlacement", face: "back", patch: { angleDeg: 40 } });
-    s = reducer(s, { type: "resetPlacement", face: "front" });
-    expect(s.placements.front).toEqual(defaultPlacement("front"));
-    expect(s.placements.back.angleDeg).toBe(40);
+  it("leaves the palang text alone, since the date is no longer part of it", () => {
+    let s = reducer(initialState("2026-09-30"), { type: "setLine", line: "MY WORDING" });
+    s = reducer(s, { type: "setDate", date: "2026-10-01" });
+    expect(s.line).toBe("MY WORDING");
   });
 });
 
 describe("canExport", () => {
   it("is false with no scan", () => {
-    let s = initialState(TODAY);
-    s = reducer(s, { type: "setField", field: "recipient", value: "Maybank" });
-    s = reducer(s, { type: "setField", field: "purpose", value: "urusan telco" });
+    const s = reducer(initialState(TODAY), { type: "setLine", line: "UNTUK BANK SAHAJA" });
     expect(canExport(s)).toBe(false);
   });
 
-  it("is false when recipient or purpose is blank", () => {
-    let s = initialState(TODAY);
-    s = reducer(s, { type: "setScan", face: "front", scan: fakeScan() });
-    s = reducer(s, { type: "setField", field: "recipient", value: "   " });
-    s = reducer(s, { type: "setField", field: "purpose", value: "urusan telco" });
+  it("is false with a scan once the text has been cleared", () => {
+    let s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
+    s = reducer(s, { type: "setLine", line: "" });
     expect(canExport(s)).toBe(false);
   });
 
-  it("is false when the palang text has been hand-edited to empty", () => {
-    // Two red lines with no sentence between them is the harm the spec calls
-    // "worse than no palang at all": it looks marked while granting no limit.
-    let s = initialState(TODAY);
-    s = reducer(s, { type: "setScan", face: "front", scan: fakeScan() });
-    s = reducer(s, { type: "setField", field: "recipient", value: "Maybank" });
-    s = reducer(s, { type: "setField", field: "purpose", value: "urusan telco" });
-    expect(canExport(s)).toBe(true);
-    s = reducer(s, { type: "editLine", line: "" });
+  it("is false when the text is only whitespace", () => {
+    // Two red lines with no sentence between them looks marked while granting
+    // no limit on use, which is worse than no palang at all.
+    let s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
+    s = reducer(s, { type: "setLine", line: "    " });
     expect(canExport(s)).toBe(false);
   });
 
-  it("is false when the hand-edited palang text is only whitespace", () => {
-    let s = initialState(TODAY);
-    s = reducer(s, { type: "setScan", face: "front", scan: fakeScan() });
-    s = reducer(s, { type: "setField", field: "recipient", value: "Maybank" });
-    s = reducer(s, { type: "setField", field: "purpose", value: "urusan telco" });
-    s = reducer(s, { type: "editLine", line: "   " });
-    expect(canExport(s)).toBe(false);
-  });
-
-  it("is true with one scan and both fields filled", () => {
-    let s = initialState(TODAY);
-    s = reducer(s, { type: "setScan", face: "front", scan: fakeScan() });
-    s = reducer(s, { type: "setField", field: "recipient", value: "Maybank" });
-    s = reducer(s, { type: "setField", field: "purpose", value: "urusan telco" });
+  it("is true with one scan and some text", () => {
+    let s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
+    s = reducer(s, { type: "setLine", line: "UNTUK BANK SAHAJA" });
     expect(canExport(s)).toBe(true);
   });
 });
 
 describe("clearAll", () => {
   it("returns to the initial state", () => {
-    let s = initialState(TODAY);
-    s = reducer(s, { type: "setScan", face: "front", scan: fakeScan() });
-    s = reducer(s, { type: "setField", field: "recipient", value: "Maybank" });
+    let s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
+    s = reducer(s, { type: "setLine", line: "X" });
     s = reducer(s, { type: "clearAll", today: TODAY });
     expect(s).toEqual(initialState(TODAY));
   });
 });
 
 describe("persistence invariant", () => {
-  it("writes nothing to localStorage when scans and fields are set", () => {
-    // The spec's central privacy guarantee: scans live in memory only.
-    let s = initialState(TODAY);
-    s = reducer(s, { type: "setScan", face: "front", scan: fakeScan() });
+  it("writes nothing to localStorage when scans and text are set", () => {
+    let s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
     s = reducer(s, { type: "setScan", face: "back", scan: fakeScan() });
-    s = reducer(s, { type: "setField", field: "recipient", value: "Maybank" });
+    s = reducer(s, { type: "setLine", line: "UNTUK BANK SAHAJA" });
 
     const keys = Object.keys(localStorage);
-    expect(keys.filter((k) => k !== SAVED_RECIPIENTS_KEY)).toEqual([]);
+    expect(keys.filter((k) => k !== SAVED_LINES_KEY)).toEqual([]);
     for (const key of keys) {
       const value = localStorage.getItem(key) ?? "";
       expect(value).not.toContain("data:image");
