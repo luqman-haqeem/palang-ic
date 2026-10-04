@@ -7,7 +7,7 @@ onto one A4 page and exported as PNG or PDF.
 Built for my own use, because the service I was using gates exports behind paid
 tokens for something that is ultimately a canvas and a download.
 
-**[Try it →](https://palang-ic.luqmanhaqeemsamsul.workers.dev)** · or run it locally:
+**[Try it →](https://palang-ic.luqmanhaqeem.workers.dev)** · or run it locally:
 
 ```
 npm install && npm run dev
