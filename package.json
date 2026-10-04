@@ -2,7 +2,7 @@
   "name": "palang-ic",
   "private": true,
   "version": "0.0.0",
-  "description": "Add a JPN-style palang to MyKad copies, entirely in your browser.",
+  "description": "Add a palang to MyKad copies, entirely in your browser.",
   "license": "MIT",
   "type": "module",
   "scripts": {

@@ -1,6 +1,6 @@
 # palang-ic
 
-A browser-local tool that adds a JPN-style **palang** to copies of a Malaysian
+A browser-local tool that adds a **palang** to copies of a Malaysian
 MyKad: two parallel lines with a restrictive sentence between them, composed
 onto one A4 page and exported as PNG or PDF.
 
@@ -21,9 +21,9 @@ the permitted purpose written between them, so the copy cannot be reused for
 anything else.
 
 **A palang is not a watermark.** A watermark obscures the document to deter
-copying. A palang deliberately obscures nothing: JPN/MKN guidance is that the
-IC number, name, date of birth and photo must all stay legible, because the
-recipient still has to be able to verify the card. The whole design follows from
+copying. A palang deliberately obscures nothing: the IC number, name, date of birth
+and photo are all meant to stay legible, because the recipient still has to be
+able to verify the card. The whole design follows from
 that one distinction — this tool will not redact, black out, or tile anything,
 and it is the reason the band is short and sits in a corner rather than running
 across the middle.
@@ -97,9 +97,7 @@ text fitting, clock, filenames — and carries almost all of the 123 tests.
 jsdom has no canvas; the maths it depends on was pushed down into `domain` so it
 could be tested without one.
 
-`CONTEXT.md` is the glossary. `docs/superpowers/specs/` holds the design
-document, including dated revision sections recording every decision that was
-superseded and why.
+`CONTEXT.md` is the glossary.
 
 ## Stack
 

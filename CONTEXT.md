@@ -11,9 +11,9 @@ may be used for.
 
 A palang is **not a watermark**. A watermark obscures content to deter reuse; a
 palang deliberately obscures nothing and constrains by declaration. The
-distinction is load-bearing: the JPN and MKN guidance requires that the name,
-IC number, date of birth and photograph remain legible, because the recipient
-must still be able to verify the card. Any change that starts covering those
+distinction is load-bearing: the name, IC number, date of birth and photograph
+must remain legible, because the recipient must still be able to verify the
+card. Any change that starts covering those
 fields has stopped building a palang.
 
 The term `watermark` is retired from this project, including in identifiers.
