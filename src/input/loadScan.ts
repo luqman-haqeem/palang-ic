@@ -1,7 +1,7 @@
 import type { Scan } from "@/state/document";
 
 export const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
-export const MAX_EDGE = 2000;
+export const MAX_EDGE = 4096;
 
 export const REJECT_MESSAGE =
   "Only JPEG, PNG and WebP images are accepted. If your scanner produced a PDF, export it as JPEG first.";
@@ -14,9 +14,10 @@ export function validateFile(
     : { ok: false, message: REJECT_MESSAGE };
 }
 
-/** A card renders into a 323x204 box, which at 300dpi export is ~1011x638 real
- *  pixels, so source detail beyond MAX_EDGE is discarded regardless. Downscaling
- *  unconditionally removes the mobile-Safari blank-canvas failure class. */
+/** A card exports at ~1011x638 real pixels (300dpi), but a phone photo is
+ *  cropped first, and the card may fill only half the frame — so the original
+ *  keeps up to MAX_EDGE. 4096 on the long edge is ~12MP at 4:3, under mobile
+ *  Safari's ~16.7MP canvas limit, so that blank-canvas failure class stays gone. */
 export function downscaleTarget(
   width: number,
   height: number,

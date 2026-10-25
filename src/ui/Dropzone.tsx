@@ -7,13 +7,14 @@ type Props = {
   face: CardFace;
   scan?: Scan;
   onLoad: (scan: Scan) => void;
+  onEdit: () => void;
   onRemove: () => void;
   onError: (message: string) => void;
 };
 
 const LABEL: Record<CardFace, string> = { front: "Front", back: "Back" };
 
-export function Dropzone({ face, scan, onLoad, onRemove, onError }: Props) {
+export function Dropzone({ face, scan, onLoad, onEdit, onRemove, onError }: Props) {
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
 
@@ -41,9 +42,14 @@ export function Dropzone({ face, scan, onLoad, onRemove, onError }: Props) {
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">{LABEL[face]}</span>
         {scan ? (
-          <button type="button" onClick={onRemove} className="text-sm text-neutral-500 underline">
-            Remove
-          </button>
+          <span className="flex gap-3">
+            <button type="button" onClick={onEdit} className="text-sm underline">
+              {scan.crop ? "Edit crop" : "Crop"}
+            </button>
+            <button type="button" onClick={onRemove} className="text-sm text-neutral-500 underline">
+              Remove
+            </button>
+          </span>
         ) : (
           <button
             type="button"

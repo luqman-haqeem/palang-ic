@@ -23,6 +23,16 @@ The term `watermark` is retired from this project, including in identifiers.
 An input image of a single card face, supplied by the user. Always an image the
 user already has — this project never captures or acquires one.
 
+## Crop
+
+The rotation (in quarter turns) and the card-shaped area of a Scan that fills
+the card box. Per Card face, and stored beside the Scan rather than baked into
+it, so it can be re-edited or reset and the original is never lost. A new Scan
+for the same face starts without one.
+
+A Crop is always the card's shape. Straightening a tilted photo is not part of
+it: a Crop only turns in quarter turns.
+
 ## Card face
 
 One side of a MyKad: `front` or `back`. The two faces carry different fields in

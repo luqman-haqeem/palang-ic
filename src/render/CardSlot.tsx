@@ -7,6 +7,7 @@ import {
   type CardFace,
   type Rect,
 } from "@/domain/page";
+import { cardImageGeometry } from "@/domain/crop";
 import type { Scan } from "@/state/document";
 
 /** Rounded-rect path, used as a clip so a scan's square corners do not read as
@@ -42,6 +43,17 @@ export function CardSlot({ face, scan, radius }: Props) {
         listening={false}
         name="placeholder"
       />
+    );
+  }
+
+  if (scan.crop) {
+    // A Crop is card-shaped, so it fills the slot exactly and the slot is what
+    // gets rounded.
+    const node = cardImageGeometry(scan.crop, scan.width, scan.height, rect);
+    return (
+      <Group clipFunc={(ctx) => roundedRectPath(ctx, rect, radius)}>
+        <KonvaImage image={scan.bitmap as unknown as CanvasImageSource} {...node} />
+      </Group>
     );
   }
 
