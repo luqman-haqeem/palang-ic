@@ -5,10 +5,12 @@ import { exportFilename } from "@/domain/filename";
 import type { CardFace } from "@/domain/page";
 import { buildPdfBlob } from "@/export/buildPdf";
 import { downloadBlob, downloadDataUrl, renderToDataUrl } from "@/export/renderToDataUrl";
+import { needsCrop } from "@/domain/crop";
 import { canExport, initialState, reducer } from "@/state/document";
 import { forgetLine, loadLines, rememberLine } from "@/state/savedLines";
 import { PageStage } from "@/render/PageStage";
 import { AdvancedSettings } from "@/ui/AdvancedSettings";
+import { CropEditor } from "@/ui/CropEditor";
 import { Dropzone } from "@/ui/Dropzone";
 import { ExportBar } from "@/ui/ExportBar";
 import { PalangTextField } from "@/ui/PalangTextField";
@@ -22,6 +24,7 @@ export default function App() {
   const [saved, setSaved] = useState(loadLines);
   const [error, setError] = useState<string | null>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
+  const [cropping, setCropping] = useState<CardFace | null>(null);
 
   function exportCopy(ext: "png" | "pdf") {
     const stage = stageRef.current;
@@ -61,7 +64,7 @@ export default function App() {
   // Arrow-key nudge: the difference between "close enough" and "exactly clear of
   // the IC number", which is this tool's one real precision requirement.
   useEffect(() => {
-    if (!selected) return;
+    if (!selected || cropping) return;
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       if (target && /^(INPUT|TEXTAREA)$/.test(target.tagName)) return;
@@ -84,12 +87,25 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selected, state.placements]);
+  }, [selected, cropping, state.placements]);
 
   const loadedFaces = FACES.filter((face) => state.scans[face]);
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 p-4 lg:flex-row">
+      {cropping && state.scans[cropping] && (
+        <CropEditor
+          key={cropping}
+          face={cropping}
+          scan={state.scans[cropping]}
+          radius={state.cornerRadius}
+          onApply={(crop) => {
+            dispatch({ type: "setCrop", face: cropping, crop });
+            setCropping(null);
+          }}
+          onCancel={() => setCropping(null)}
+        />
+      )}
       <section className="flex-1">
         <PageStage
           state={state}
@@ -123,7 +139,10 @@ export default function App() {
               onLoad={(scan) => {
                 setError(null);
                 dispatch({ type: "setScan", face, scan });
+                // Kept uncropped if the user cancels: nothing they chose is discarded.
+                if (needsCrop(scan.width, scan.height)) setCropping(face);
               }}
+              onEdit={() => setCropping(face)}
               onRemove={() => dispatch({ type: "removeScan", face })}
               onError={setError}
             />

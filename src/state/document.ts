@@ -1,3 +1,4 @@
+import type { Crop } from "@/domain/crop";
 import { cardCornerRadius, type CardFace, RADIUS_MAX, RADIUS_MIN } from "@/domain/page";
 import {
   ANGLE_MAX,
@@ -18,7 +19,9 @@ import {
   type PalangPlacement,
 } from "@/domain/palang";
 
-export type Scan = { width: number; height: number; bitmap: ImageBitmap };
+/** `bitmap` is always the original upload; a `crop` frames it at draw time and
+ *  is dropped with it, so a new image never inherits the last one's framing. */
+export type Scan = { width: number; height: number; bitmap: ImageBitmap; crop?: Crop };
 
 export type SessionState = {
   scans: Partial<Record<CardFace, Scan>>;
@@ -36,6 +39,7 @@ export type SessionState = {
 export type Action =
   | { type: "setScan"; face: CardFace; scan: Scan }
   | { type: "removeScan"; face: CardFace }
+  | { type: "setCrop"; face: CardFace; crop: Crop }
   | { type: "setLine"; line: string }
   | { type: "setDate"; date: string }
   | { type: "setStyle"; patch: Partial<BandStyle> }
@@ -66,6 +70,12 @@ export function reducer(state: SessionState, action: Action): SessionState {
       const scans = { ...state.scans };
       delete scans[action.face];
       return { ...state, scans };
+    }
+
+    case "setCrop": {
+      const scan = state.scans[action.face];
+      if (!scan) return state;
+      return { ...state, scans: { ...state.scans, [action.face]: { ...scan, crop: action.crop } } };
     }
 
     case "setLine":

@@ -106,6 +106,30 @@ describe("scans", () => {
   });
 });
 
+describe("crops", () => {
+  const crop = { rotation: 90 as const, area: { x: 0, y: 100, width: 1600, height: 1010 } };
+
+  it("frames one face without touching the other", () => {
+    let s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
+    s = reducer(s, { type: "setScan", face: "back", scan: fakeScan() });
+    s = reducer(s, { type: "setCrop", face: "front", crop });
+    expect(s.scans.front?.crop).toEqual(crop);
+    expect(s.scans.back?.crop).toBeUndefined();
+  });
+
+  it("drops the crop when a new image is uploaded for that face", () => {
+    let s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
+    s = reducer(s, { type: "setCrop", face: "front", crop });
+    s = reducer(s, { type: "setScan", face: "front", scan: fakeScan(3000, 4000) });
+    expect(s.scans.front?.crop).toBeUndefined();
+  });
+
+  it("ignores a crop for a face with no image", () => {
+    const s = reducer(initialState(TODAY), { type: "setCrop", face: "back", crop });
+    expect(s.scans.back).toBeUndefined();
+  });
+});
+
 describe("setDate", () => {
   it("updates the date used for the filename", () => {
     const s = reducer(initialState("2026-09-30"), { type: "setDate", date: "2026-10-01" });

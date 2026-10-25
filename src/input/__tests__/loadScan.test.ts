@@ -39,14 +39,18 @@ describe("downscaleTarget", () => {
     expect(downscaleTarget(1600, 1000)).toEqual({ width: 1600, height: 1000 });
   });
 
+  it("keeps a 12MP phone photo whole, so a crop of the card keeps its detail", () => {
+    expect(downscaleTarget(4000, 3000)).toEqual({ width: 4000, height: 3000 });
+  });
+
   it("scales a wide image so its longest edge is the maximum", () => {
-    expect(downscaleTarget(4000, 2500)).toEqual({ width: 2000, height: 1250 });
+    expect(downscaleTarget(8192, 6144)).toEqual({ width: 4096, height: 3072 });
   });
 
   it("scales a tall image by its height", () => {
-    const { width, height } = downscaleTarget(2500, 4000);
+    const { width, height } = downscaleTarget(6144, 8192);
     expect(height).toBe(MAX_EDGE);
-    expect(width).toBe(1250);
+    expect(width).toBe(3072);
   });
 
   it("never returns a zero dimension for a very lopsided image", () => {
