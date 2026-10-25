@@ -1,10 +1,11 @@
 import { type CardImageGeometry, cardImageGeometry } from "@/domain/crop";
 import { cardRect, type CardFace, containFit, PAGE, type Rect } from "@/domain/page";
 import { bandGeometry, type PalangPlacement } from "@/domain/palang";
-import type { Scan, SessionState } from "@/state/session";
+import type { DocumentKind, Scan, SessionState } from "@/state/session";
 
-/** A box on the sheet that one Document's Scan is drawn into. */
-export type SlotId = CardFace;
+/** A box on the sheet that one Document's Scan is drawn into: a Card face on
+ *  a MyKad, or the one Page. */
+export type SlotId = CardFace | "page";
 
 /** Konva image-node props for a Scan. `crop` is absent when the whole image
  *  is drawn. */
@@ -48,9 +49,20 @@ export type CopyLayout = {
 
 const FACES: CardFace[] = ["front", "back"];
 
+/** The slots a kind draws, in drawing order. */
+export function kindSlots(kind: DocumentKind): SlotId[] {
+  return kind === "page" ? ["page"] : FACES;
+}
+
+export function slotKind(id: SlotId): DocumentKind {
+  return id === "page" ? "page" : "mykad";
+}
+
 /** The single source of the Copy's geometry. Pure, so the preview, the band's
- *  drag limits and the reducer's clamp can all read it and never disagree. */
+ *  drag limits and the reducer's clamp can all read it and never disagree.
+ *  Lays out the active kind only. */
 export function copyLayout(session: SessionState): CopyLayout {
+  if (session.kind === "page") return pageLayout(session);
   return {
     sheet: { width: PAGE.widthPx, height: PAGE.heightPx },
     slots: FACES.map((id) => cardSlot(session, id)),
@@ -72,6 +84,7 @@ const BAND_X_FRACTION = 0.105;
 const BAND_Y_FRACTION = 0.196;
 
 export function defaultPlacement(id: SlotId): PalangPlacement {
+  if (id === "page") return { cx: 0, cy: 0 };
   const rect = cardRect(id);
   return {
     cx: rect.x + Math.round(rect.width * BAND_X_FRACTION),
@@ -138,4 +151,19 @@ function placeScan(scan: Scan | undefined, slot: Rect): { box: Rect; image: Imag
   }
   const box = containFit(scan.width, scan.height, slot);
   return { box, image: { ...box, offsetX: 0, offsetY: 0, rotation: 0 } };
+}
+
+function pageLayout(session: SessionState): CopyLayout {
+  const sheet = { width: PAGE.widthPx, height: PAGE.heightPx };
+  const slot: Rect = { x: 0, y: 0, ...sheet };
+  const { box, image } = placeScan(session.scans.page, slot);
+  const { fontSize, lengthFactor } = session.style;
+  const bounds: CentreBounds = { minX: 0, maxX: sheet.width, minY: 0, maxY: sheet.height };
+  const band: BandLayout = {
+    ...clampCentre(bounds, session.placements.page),
+    ...bandGeometry(fontSize, box.width, lengthFactor),
+    fontSize,
+    bounds,
+  };
+  return { sheet, slots: [{ id: "page", slot, box, cornerRadius: 0, image, band }] };
 }

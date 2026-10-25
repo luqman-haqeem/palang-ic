@@ -5,7 +5,7 @@ import { exportFilename } from "@/domain/filename";
 import type { CardFace } from "@/domain/page";
 import { buildPdfBlob } from "@/export/buildPdf";
 import { downloadBlob, downloadDataUrl, renderToDataUrl } from "@/export/renderToDataUrl";
-import { copyLayout } from "@/domain/copyLayout";
+import { copyLayout, type SlotId } from "@/domain/copyLayout";
 import { needsCrop } from "@/domain/crop";
 import { canExport, initialState, reducer } from "@/state/session";
 import { forgetLine, loadLines, rememberLine } from "@/state/savedLines";
@@ -21,7 +21,7 @@ const today = () => isoToday(new Date());
 
 export default function App() {
   const [state, dispatch] = useReducer(reducer, today(), initialState);
-  const [selected, setSelected] = useState<CardFace | null>(null);
+  const [selected, setSelected] = useState<SlotId | null>(null);
   const [saved, setSaved] = useState(loadLines);
   const [error, setError] = useState<string | null>(null);
   const stageRef = useRef<Konva.Stage | null>(null);

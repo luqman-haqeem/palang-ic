@@ -1,5 +1,4 @@
-import type { SlotLayout } from "@/domain/copyLayout";
-import type { CardFace } from "@/domain/page";
+import type { SlotId, SlotLayout } from "@/domain/copyLayout";
 import type { BandStyle, PalangPlacement } from "@/domain/palang";
 import { BandStyleControls } from "@/ui/BandStyleControls";
 import { CardStyleControls } from "@/ui/CardStyleControls";
@@ -10,12 +9,12 @@ type Props = {
   /** The Copy layout's slots that have a Scan, each with a position control. */
   slots: SlotLayout[];
   style: BandStyle;
-  placements: Record<CardFace, PalangPlacement>;
+  placements: Record<SlotId, PalangPlacement>;
   cornerRadius: number;
   onStyleChange: (patch: Partial<BandStyle>) => void;
   onCornerRadiusChange: (radius: number) => void;
-  onPlacementChange: (face: CardFace, patch: Partial<PalangPlacement>) => void;
-  onPlacementReset: (face: CardFace) => void;
+  onPlacementChange: (slot: SlotId, patch: Partial<PalangPlacement>) => void;
+  onPlacementReset: (slot: SlotId) => void;
 };
 
 /** Collapsed by default. The built-in defaults are tuned to a real card, so
@@ -42,7 +41,7 @@ export function AdvancedSettings({
         {slots.map(({ id, band }) => (
           <PlacementControls
             key={id}
-            face={id}
+            slot={id}
             placement={placements[id]}
             bounds={band.bounds}
             onChange={(patch) => onPlacementChange(id, patch)}

@@ -195,3 +195,69 @@ describe("persistence invariant", () => {
     }
   });
 });
+
+describe("document kind", () => {
+  it("starts as a MyKad", () => {
+    expect(initialState(TODAY).kind).toBe("mykad");
+  });
+
+  it("switches to a Page and back, keeping the text and Band style", () => {
+    let s = reducer(initialState(TODAY), { type: "setLine", line: "UNTUK SEKOLAH SAHAJA" });
+    s = reducer(s, { type: "setStyle", patch: { angleDeg: -20, ink: "#c00000" } });
+    s = reducer(s, { type: "setKind", kind: "page" });
+    expect(s.kind).toBe("page");
+    expect(s.line).toBe("UNTUK SEKOLAH SAHAJA");
+    expect(s.style).toMatchObject({ angleDeg: -20, ink: "#c00000" });
+    s = reducer(s, { type: "setKind", kind: "mykad" });
+    expect(s.kind).toBe("mykad");
+    expect(s.style).toMatchObject({ angleDeg: -20, ink: "#c00000" });
+  });
+
+  it("keeps each kind's scans and placements across a round trip", () => {
+    const front = fakeScan();
+    const page = fakeScan(2480, 3508);
+    let s = reducer(initialState(TODAY), { type: "setScan", slot: "front", scan: front });
+    s = reducer(s, { type: "setPlacement", slot: "front", patch: { cx: 300, cy: 200 } });
+    s = reducer(s, { type: "setKind", kind: "page" });
+    s = reducer(s, { type: "setScan", slot: "page", scan: page });
+    s = reducer(s, { type: "setPlacement", slot: "page", patch: { cx: 400, cy: 500 } });
+    s = reducer(s, { type: "setKind", kind: "mykad" });
+    expect(s.scans.front).toBe(front);
+    expect(s.placements.front).toEqual({ cx: 300, cy: 200 });
+    s = reducer(s, { type: "setKind", kind: "page" });
+    expect(s.scans.page).toBe(page);
+    expect(s.placements.page).toEqual({ cx: 400, cy: 500 });
+  });
+
+  it("is emptied of both kinds' scans by Clear all, back to a MyKad", () => {
+    let s = reducer(initialState(TODAY), { type: "setScan", slot: "front", scan: fakeScan() });
+    s = reducer(s, { type: "setKind", kind: "page" });
+    s = reducer(s, { type: "setScan", slot: "page", scan: fakeScan(2480, 3508) });
+    s = reducer(s, { type: "clearAll", today: TODAY });
+    expect(s.scans).toEqual({});
+    expect(s.kind).toBe("mykad");
+  });
+});
+
+describe("canExport by kind", () => {
+  it("ignores a MyKad scan while the Page is active", () => {
+    let s = reducer(initialState(TODAY), { type: "setScan", slot: "front", scan: fakeScan() });
+    s = reducer(s, { type: "setKind", kind: "page" });
+    expect(canExport(s)).toBe(false);
+  });
+
+  it("ignores a Page scan while the MyKad is active", () => {
+    let s = reducer(initialState(TODAY), { type: "setKind", kind: "page" });
+    s = reducer(s, { type: "setScan", slot: "page", scan: fakeScan(2480, 3508) });
+    expect(canExport(s)).toBe(true);
+    s = reducer(s, { type: "setKind", kind: "mykad" });
+    expect(canExport(s)).toBe(false);
+  });
+
+  it("still needs text on a Page", () => {
+    let s = reducer(initialState(TODAY), { type: "setKind", kind: "page" });
+    s = reducer(s, { type: "setScan", slot: "page", scan: fakeScan(2480, 3508) });
+    s = reducer(s, { type: "setLine", line: "  " });
+    expect(canExport(s)).toBe(false);
+  });
+});

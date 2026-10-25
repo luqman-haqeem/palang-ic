@@ -1,6 +1,6 @@
-import { copyLayout, defaultPlacement, layoutSlot, type SlotId } from "@/domain/copyLayout";
+import { copyLayout, defaultPlacement, kindSlots, layoutSlot, type SlotId, slotKind } from "@/domain/copyLayout";
 import type { Crop } from "@/domain/crop";
-import { cardCornerRadius, type CardFace, RADIUS_MAX, RADIUS_MIN } from "@/domain/page";
+import { cardCornerRadius, RADIUS_MAX, RADIUS_MIN } from "@/domain/page";
 import {
   ANGLE_MAX,
   ANGLE_MIN,
@@ -22,20 +22,30 @@ import {
  *  is dropped with it, so a new image never inherits the last one's framing. */
 export type Scan = { width: number; height: number; bitmap: ImageBitmap; crop?: Crop };
 
+/** What the user is making a Copy of. Always their choice, never guessed from a
+ *  Scan: a card and a landscape A4 page are too close in shape to tell apart. */
+export type DocumentKind = "mykad" | "page";
+
+/** Both kinds' Scans and Placements are held side by side, keyed by slot, so a
+ *  kind switch discards nothing. Only the active kind's slots are drawn. */
 export type SessionState = {
-  scans: Partial<Record<CardFace, Scan>>;
+  kind: DocumentKind;
+  scans: Partial<Record<SlotId, Scan>>;
   /** Exactly what the user typed. The tool imposes no template and appends no
    *  date — including a date, a recipient, or neither is the user's call. */
   line: string;
   /** Used only for the export filename. */
   date: string;
-  placements: Record<CardFace, PalangPlacement>;
+  placements: Record<SlotId, PalangPlacement>;
+  /** Shared by both kinds: one palang, one hand. */
   style: BandStyle;
-  /** Corner rounding applied to the scans, in page logical px. */
+  /** Corner rounding applied to MyKad scans, in page logical px. A Page is
+   *  always square. */
   cornerRadius: number;
 };
 
 export type Action =
+  | { type: "setKind"; kind: DocumentKind }
   | { type: "setScan"; slot: SlotId; scan: Scan }
   | { type: "removeScan"; slot: SlotId }
   | { type: "setCrop"; slot: SlotId; crop: Crop }
@@ -49,10 +59,15 @@ export type Action =
 
 export function initialState(today: string): SessionState {
   return {
+    kind: "mykad",
     scans: {},
     line: DEFAULT_PALANG_TEXT,
     date: today,
-    placements: { front: defaultPlacement("front"), back: defaultPlacement("back") },
+    placements: {
+      front: defaultPlacement("front"),
+      back: defaultPlacement("back"),
+      page: defaultPlacement("page"),
+    },
     style: { ...DEFAULT_BAND_STYLE },
     cornerRadius: cardCornerRadius(),
   };
@@ -62,6 +77,9 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), h
 
 export function reducer(state: SessionState, action: Action): SessionState {
   switch (action.type) {
+    case "setKind":
+      return { ...state, kind: action.kind };
+
     case "setScan":
       return { ...state, scans: { ...state.scans, [action.slot]: action.scan } };
 
@@ -105,7 +123,10 @@ export function reducer(state: SessionState, action: Action): SessionState {
       const placements = { ...state.placements, [action.slot]: merged };
       // Stored exactly where the Copy layout draws it, so state and preview
       // cannot disagree about where the band is.
-      const { cx, cy } = layoutSlot(copyLayout({ ...state, placements }), action.slot).band;
+      const { cx, cy } = layoutSlot(
+        copyLayout({ ...state, kind: slotKind(action.slot), placements }),
+        action.slot,
+      ).band;
       return { ...state, placements: { ...placements, [action.slot]: { cx, cy } } };
     }
 
@@ -124,6 +145,6 @@ export function reducer(state: SessionState, action: Action): SessionState {
  *  that looks marked while granting no limit on use. The default text is a
  *  complete sentence, so it is exportable as it stands. */
 export function canExport(state: SessionState): boolean {
-  const hasScan = Boolean(state.scans.front || state.scans.back);
+  const hasScan = kindSlots(state.kind).some((slot) => state.scans[slot]);
   return hasScan && state.line.trim() !== "";
 }

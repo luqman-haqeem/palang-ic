@@ -1,9 +1,8 @@
-import type { CentreBounds } from "@/domain/copyLayout";
-import type { CardFace } from "@/domain/page";
+import type { CentreBounds, SlotId } from "@/domain/copyLayout";
 import type { PalangPlacement } from "@/domain/palang";
 
 type Props = {
-  face: CardFace;
+  slot: SlotId;
   placement: PalangPlacement;
   /** From the Copy layout: the same bounds that limit dragging. */
   bounds: CentreBounds;
@@ -11,13 +10,13 @@ type Props = {
   onReset: () => void;
 };
 
-/** Position is the only per-face setting, because the fields that must stay
- *  legible sit differently on each side. Sliders as well as dragging: dragging
- *  a small band with a thumb is fiddly, and the slider ends are the card edges. */
-export function PlacementControls({ face, placement, bounds, onChange, onReset }: Props) {
+/** Position is the only per-slot setting, because the fields that must stay
+ *  legible sit differently on each Card face and on every Page. Sliders as well as dragging: dragging
+ *  a small band with a thumb is fiddly, and the slider ends are the limits dragging stops at. */
+export function PlacementControls({ slot, placement, bounds, onChange, onReset }: Props) {
   return (
     <fieldset className="rounded border border-neutral-200 p-3">
-      <legend className="px-1 text-sm font-medium capitalize">{face} position</legend>
+      <legend className="px-1 text-sm font-medium capitalize">{slot} position</legend>
 
       <label className="block text-xs">
         Left / right: {placement.cx - bounds.minX}
@@ -46,7 +45,7 @@ export function PlacementControls({ face, placement, bounds, onChange, onReset }
       </label>
 
       <button type="button" onClick={onReset} className="mt-1 text-xs underline">
-        Reset {face} position
+        Reset {slot} position
       </button>
     </fieldset>
   );
