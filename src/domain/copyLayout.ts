@@ -1,5 +1,5 @@
 import { type CardImageGeometry, cardImageGeometry } from "@/domain/crop";
-import { cardRect, type CardFace, containFit, PAGE, type Rect } from "@/domain/page";
+import { cardRect, type CardFace, cardSize, containFit, PAGE, type Rect } from "@/domain/page";
 import { bandGeometry, type PalangPlacement } from "@/domain/palang";
 import type { DocumentKind, Scan, SessionState } from "@/state/session";
 
@@ -153,17 +153,78 @@ function placeScan(scan: Scan | undefined, slot: Rect): { box: Rect; image: Imag
   return { box, image: { ...box, offsetX: 0, offsetY: 0, rotation: 0 } };
 }
 
+/** A Page is contain-fitted to the whole sheet, edge to edge: never cropped,
+ *  and with no margin, since the Page is the paper. The sheet turns landscape
+ *  when the Page does, so a landscape Page is not shrunk onto a portrait one. */
 function pageLayout(session: SessionState): CopyLayout {
-  const sheet = { width: PAGE.widthPx, height: PAGE.heightPx };
+  const scan = session.scans.page;
+  const shape = scan ? pageShape(scan) : null;
+  const landscape = shape !== null && shape.width > shape.height;
+  const sheet = landscape
+    ? { width: PAGE.heightPx, height: PAGE.widthPx }
+    : { width: PAGE.widthPx, height: PAGE.heightPx };
   const slot: Rect = { x: 0, y: 0, ...sheet };
-  const { box, image } = placeScan(session.scans.page, slot);
-  const { fontSize, lengthFactor } = session.style;
-  const bounds: CentreBounds = { minX: 0, maxX: sheet.width, minY: 0, maxY: sheet.height };
-  const band: BandLayout = {
+  const { box, image } = placeScan(scan, slot);
+  return {
+    sheet,
+    slots: [
+      { id: "page", slot, box, cornerRadius: 0, image, band: pageBand(session, sheet, box) },
+    ],
+  };
+}
+
+/** The Page as it will be drawn: its Crop's area once framed, else the whole
+ *  Scan. The area is already in turned pixels. */
+function pageShape(scan: Scan): { width: number; height: number } {
+  return scan.crop ? scan.crop.area : scan;
+}
+
+/** Unlike a card, a Page has no page around it to overhang onto, so the whole
+ *  band (both lines, both ends, the text) is held on the sheet: a palang is
+ *  never cut by the edge of the Copy. Sized by document width over card width,
+ *  so it keeps its MyKad proportions. */
+function pageBand(
+  session: SessionState,
+  sheet: { width: number; height: number },
+  doc: Rect,
+): BandLayout {
+  const { angleDeg, lengthFactor } = session.style;
+  const fontSize = session.style.fontSize * (doc.width / cardSize().width);
+  const geometry = bandGeometry(fontSize, doc.width, lengthFactor);
+  const halfThick = geometry.lineGap / 2 + geometry.strokeWidth / 2;
+  const t = (angleDeg * Math.PI) / 180;
+  const cos = Math.abs(Math.cos(t));
+  const sin = Math.abs(Math.sin(t));
+
+  // The longest band whose rotated box fits the sheet at this angle.
+  const byWidth = cos > 1e-9 ? (sheet.width - 2 * sin * halfThick) / cos : Infinity;
+  const byHeight = sin > 1e-9 ? (sheet.height - 2 * cos * halfThick) / sin : Infinity;
+  const length = Math.max(0, Math.min(geometry.length, byWidth, byHeight));
+
+  // Half-extents of the rotated box, which bound the centre on the sheet.
+  const ex = cos * (length / 2) + sin * halfThick;
+  const ey = sin * (length / 2) + cos * halfThick;
+  const [minX, maxX] = centreRange(ex, sheet.width - ex, doc.x, doc.x + doc.width);
+  const [minY, maxY] = centreRange(ey, sheet.height - ey, doc.y, doc.y + doc.height);
+  const bounds: CentreBounds = { minX, maxX, minY, maxY };
+
+  return {
     ...clampCentre(bounds, session.placements.page),
-    ...bandGeometry(fontSize, box.width, lengthFactor),
+    ...geometry,
+    length,
     fontSize,
     bounds,
   };
-  return { sheet, slots: [{ id: "page", slot, box, cornerRadius: 0, image, band }] };
+}
+
+/** The sheet's range, narrowed to the document's span where the two overlap,
+ *  so the centre stays over the Page when it can. A range that has closed up
+ *  collapses to its middle. */
+function centreRange(lo: number, hi: number, docLo: number, docHi: number): [number, number] {
+  const a = Math.max(lo, docLo);
+  const b = Math.min(hi, docHi);
+  if (a <= b) return [a, b];
+  if (lo <= hi) return [lo, hi];
+  const mid = (lo + hi) / 2;
+  return [mid, mid];
 }
