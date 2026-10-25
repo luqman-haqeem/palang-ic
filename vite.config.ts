@@ -37,5 +37,7 @@ export default defineConfig({
       },
     }),
   ],
+  // PROTOTYPE: lets the dev server answer through a trycloudflare quick tunnel.
+  server: { allowedHosts: [".trycloudflare.com"] },
   resolve: { alias: { "@": path.resolve(import.meta.dirname, "./src") } },
 });

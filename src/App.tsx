@@ -12,6 +12,10 @@ import { AdvancedSettings } from "@/ui/AdvancedSettings";
 import { Dropzone } from "@/ui/Dropzone";
 import { ExportBar } from "@/ui/ExportBar";
 import { PalangTextField } from "@/ui/PalangTextField";
+import { DocumentPagePrototype } from "@/ui/prototype-document-page/DocumentPage.prototype"; // PROTOTYPE
+
+// PROTOTYPE: `?variant=` swaps the MyKad page for a full-page document.
+const DOC_PROTO = import.meta.env.DEV && new URLSearchParams(window.location.search).has("variant");
 
 const FACES: CardFace[] = ["front", "back"];
 const today = () => isoToday(new Date());
@@ -33,7 +37,8 @@ export default function App() {
         downloadDataUrl(url, filename);
       } else {
         const jpeg = renderToDataUrl(stage, { mimeType: "image/jpeg", quality: 0.92 });
-        downloadBlob(buildPdfBlob(jpeg), filename);
+        const orientation = stage.width() > stage.height() ? "landscape" : "portrait"; // PROTOTYPE
+        downloadBlob(buildPdfBlob(jpeg, orientation), filename);
       }
       setSaved(rememberLine(state.line));
       setError(null);
@@ -91,6 +96,9 @@ export default function App() {
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 p-4 lg:flex-row">
       <section className="flex-1">
+        {DOC_PROTO ? ( // PROTOTYPE
+          <DocumentPagePrototype style={state.style} line={state.line} stageRef={stageRef} />
+        ) : (
         <PageStage
           state={state}
           selected={selected}
@@ -98,6 +106,7 @@ export default function App() {
           onDragEnd={(face, patch) => dispatch({ type: "setPlacement", face, patch })}
           stageRef={stageRef}
         />
+        )}
       </section>
 
       <aside className="w-full space-y-4 lg:w-80">
@@ -114,7 +123,7 @@ export default function App() {
           </p>
         )}
 
-        <div className="space-y-3">
+        <div className={DOC_PROTO ? "hidden" : "space-y-3"}>
           {FACES.map((face) => (
             <Dropzone
               key={face}
@@ -137,9 +146,9 @@ export default function App() {
           onForget={(line) => setSaved(forgetLine(line))}
         />
 
-        {loadedFaces.length > 0 && (
+        {(DOC_PROTO || loadedFaces.length > 0) && (
           <AdvancedSettings
-            faces={loadedFaces}
+            faces={DOC_PROTO ? [] : loadedFaces}
             style={state.style}
             placements={state.placements}
             cornerRadius={state.cornerRadius}
@@ -151,7 +160,7 @@ export default function App() {
         )}
 
         <ExportBar
-          disabled={!canExport(state)}
+          disabled={DOC_PROTO ? !state.line.trim() : !canExport(state)}
           disabledReason={
             loadedFaces.length === 0
               ? "Add at least one scan."
