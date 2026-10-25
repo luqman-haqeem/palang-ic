@@ -3,6 +3,7 @@ import {
   ACCEPTED_TYPES,
   downscaleTarget,
   MAX_EDGE,
+  maxEdgeFor,
   REJECT_MESSAGE,
   validateFile,
 } from "@/input/loadScan";
@@ -57,5 +58,28 @@ describe("downscaleTarget", () => {
     const { width, height } = downscaleTarget(8000, 3);
     expect(width).toBe(MAX_EDGE);
     expect(height).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("maxEdgeFor", () => {
+  // A4 is 297mm on its long edge: 297 / 25.4 * 300 ≈ 3508px at 300dpi.
+  const A4_LONG_EDGE_300DPI = 3508;
+
+  it("keeps a full A4-at-300dpi Page Scan at its original size", () => {
+    const page = maxEdgeFor("page");
+    expect(downscaleTarget(2480, 3508, page)).toEqual({ width: 2480, height: 3508 });
+    expect(downscaleTarget(3508, 2480, page)).toEqual({ width: 3508, height: 2480 });
+  });
+
+  it("never lets a Page fall below the A4-at-300dpi long edge", () => {
+    expect(maxEdgeFor("page")).toBeGreaterThanOrEqual(A4_LONG_EDGE_300DPI);
+  });
+
+  it("leaves the MyKad ceiling where it was", () => {
+    expect(maxEdgeFor("mykad")).toBe(4096);
+  });
+
+  it("downscales an oversized Page Scan to the Page ceiling", () => {
+    expect(downscaleTarget(6000, 8000, maxEdgeFor("page"))).toEqual({ width: 3072, height: 4096 });
   });
 });
