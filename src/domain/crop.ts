@@ -1,16 +1,17 @@
-import { cardSize, type Rect } from "@/domain/page";
+import { cardSize, PAGE, type Rect } from "@/domain/page";
 import { BASE_PIXEL_RATIO } from "@/export/exportScale";
 
 /** Quarter turns clockwise. A card photographed in portrait is lying on its
  *  side; straightening a few degrees of tilt is out of scope. */
 export type Rotation = 0 | 90 | 180 | 270;
 
-/** The rotation and card-shaped area of a Scan that fills the card box. Stored
+/** The rotation and the area of a Scan that fills its box: card-shaped for a
+ *  Card face, A4-shaped for a Page (see `cropBox`). Stored
  *  beside the original image, never baked into it, so it can be re-edited.
  *  `area` is in pixels of the image after `rotation` is applied. */
 export type Crop = { rotation: Rotation; area: Rect };
 
-/** The shape of the box a card is drawn into. A Crop always has this shape, so
+/** The shape of the box a card is drawn into. A card's Crop has this shape, so
  *  it fills the box exactly rather than being letterboxed or stretched. */
 export function cardRatio(): number {
   const { width, height } = cardSize();
@@ -28,10 +29,33 @@ export function needsCrop(width: number, height: number): boolean {
   return Math.abs(width / height / cardRatio() - 1) > CARD_SHAPE_TOLERANCE;
 }
 
-/** The largest card-shaped area that fits in a width x height image, centred.
- *  Where the editor starts, and where Reset and rotating return to. */
-export function defaultCropArea(width: number, height: number): Rect {
-  const ratio = cardRatio();
+/** What a Crop fills: a Card face's box, or the whole sheet for a Page. */
+export type CropTarget = "card" | "page";
+
+/** The box a Crop fills, in sheet px, for a photo turned to width x height. A
+ *  Page's is the A4 sheet, landscape while the turned photo is wider than it
+ *  is tall — so a quarter turn flips it, and the sheet follows. */
+export function cropBox(
+  target: CropTarget,
+  width: number,
+  height: number,
+): { width: number; height: number } {
+  if (target === "card") return cardSize();
+  return width > height
+    ? { width: PAGE.heightPx, height: PAGE.widthPx }
+    : { width: PAGE.widthPx, height: PAGE.heightPx };
+}
+
+/** The shape (width over height) a Crop of `target` keeps on this photo. */
+export function cropRatio(target: CropTarget, width: number, height: number): number {
+  const box = cropBox(target, width, height);
+  return box.width / box.height;
+}
+
+/** The largest area of the target's shape that fits in a width x height image,
+ *  centred. Where the editor starts, and where Reset and rotating return to. */
+export function defaultCropArea(width: number, height: number, target: CropTarget = "card"): Rect {
+  const ratio = cropRatio(target, width, height);
   const byWidth = width / ratio <= height;
   const w = byWidth ? width : height * ratio;
   const h = byWidth ? width / ratio : height;
@@ -40,15 +64,33 @@ export function defaultCropArea(width: number, height: number): Rect {
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
 
-/** Pulls a requested area back to one the editor allows: card-shaped, inside
- *  the photo, no wider than the photo allows and no narrower than the card box
- *  at 300dpi — any narrower and the export would upscale and print soft. A
- *  photo too small for that cannot zoom in at all. Width wins over height, and
- *  the area keeps its centre while its size changes. */
-export function clampCropArea(area: Rect, width: number, height: number): Rect {
-  const ratio = cardRatio();
-  const largest = defaultCropArea(width, height);
-  const sharpest = Math.min(largest.width, cardSize().width * BASE_PIXEL_RATIO);
+/** How sharp the narrowest Crop must still print, in px per sheet px. A card
+ *  holds its IC number to 300dpi. A Page is held to 150dpi instead: a phone
+ *  photo of a whole document rarely has 300dpi to give once trimmed, and body
+ *  text survives 150dpi where a card's small print may not. */
+const MIN_PIXEL_RATIO: Record<CropTarget, number> = {
+  card: BASE_PIXEL_RATIO,
+  page: 150 / 96,
+};
+
+/** Pulls a requested area back to one the editor allows: the target's shape,
+ *  inside the photo, no wider than the photo allows and no narrower than the
+ *  target's box at its minimum sharpness (300dpi for a card) — any narrower
+ *  and the export would upscale and print soft. A photo too small for that
+ *  cannot zoom in at all. Width wins over height, and the area keeps its
+ *  centre while its size changes. */
+export function clampCropArea(
+  area: Rect,
+  width: number,
+  height: number,
+  target: CropTarget = "card",
+): Rect {
+  const ratio = cropRatio(target, width, height);
+  const largest = defaultCropArea(width, height, target);
+  const sharpest = Math.min(
+    largest.width,
+    cropBox(target, width, height).width * MIN_PIXEL_RATIO[target],
+  );
   const w = clamp(area.width, sharpest, largest.width);
   const h = w === largest.width ? largest.height : w / ratio;
   const cx = area.x + area.width / 2;
@@ -71,18 +113,20 @@ export function zoomCropArea(
   focus: { x: number; y: number },
   width: number,
   height: number,
+  target: CropTarget = "card",
 ): Rect {
-  const w = clampCropArea({ ...area, width: area.width / factor }, width, height).width;
+  const w = clampCropArea({ ...area, width: area.width / factor }, width, height, target).width;
   const k = w / area.width;
   return clampCropArea(
     {
       x: focus.x - (focus.x - area.x) * k,
       y: focus.y - (focus.y - area.y) * k,
       width: w,
-      height: w / cardRatio(),
+      height: w / cropRatio(target, width, height),
     },
     width,
     height,
+    target,
   );
 }
 
@@ -94,17 +138,23 @@ export function rotatedSize(
   return rotation % 180 === 0 ? { width, height } : { width: height, height: width };
 }
 
-/** Upright, framed on the largest centred card-shaped area. */
-export function initialCrop(width: number, height: number): Crop {
-  return { rotation: 0, area: defaultCropArea(width, height) };
+/** Upright, framed on the largest centred area of the target's shape. */
+export function initialCrop(width: number, height: number, target: CropTarget = "card"): Crop {
+  return { rotation: 0, area: defaultCropArea(width, height, target) };
 }
 
 /** A quarter turn either way. The framing resets rather than following the
  *  turn: people rotate before they frame, not after. */
-export function rotateCrop(crop: Crop, step: 90 | -90, width: number, height: number): Crop {
+export function rotateCrop(
+  crop: Crop,
+  step: 90 | -90,
+  width: number,
+  height: number,
+  target: CropTarget = "card",
+): Crop {
   const rotation = ((crop.rotation + step + 360) % 360) as Rotation;
   const turned = rotatedSize(width, height, rotation);
-  return { rotation, area: defaultCropArea(turned.width, turned.height) };
+  return { rotation, area: defaultCropArea(turned.width, turned.height, target) };
 }
 
 /** Where the card box's image node goes. Konva crops in the original image's

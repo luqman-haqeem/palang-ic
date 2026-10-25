@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   cardImageGeometry,
   clampCropArea,
+  cropBox,
   defaultCropArea,
   initialCrop,
   needsCrop,
@@ -171,5 +172,56 @@ describe("cardImageGeometry", () => {
       x: 171.5, // card centre
       y: 122,
     });
+  });
+});
+
+describe("a Page Crop", () => {
+  it("frames the tallest portrait A4 area across the middle of a portrait photo", () => {
+    const area = defaultCropArea(3000, 4000, "page");
+    expect(area.y).toBe(0);
+    expect(area.height).toBe(4000);
+    expect(area.width).toBeCloseTo(2828.1, 1); // 4000 / (1123/794), about 4000 / √2
+    expect(area.x).toBeCloseTo(85.9, 1);
+  });
+
+  it("starts upright on a portrait A4 area", () => {
+    const crop = initialCrop(3000, 4000, "page");
+    expect(crop.rotation).toBe(0);
+    expect(crop.area.width / crop.area.height).toBeCloseTo(1 / Math.SQRT2, 3);
+  });
+
+  it("turns landscape after a quarter turn, and portrait again after another", () => {
+    const turned = rotateCrop(initialCrop(3000, 4000, "page"), 90, 3000, 4000, "page");
+    expect(turned.area).toMatchObject({ x: 0, width: 4000 });
+    expect(turned.area.width / turned.area.height).toBeCloseTo(Math.SQRT2, 3);
+    const back = rotateCrop(turned, 90, 3000, 4000, "page");
+    expect(back.area.width / back.area.height).toBeCloseTo(1 / Math.SQRT2, 3);
+  });
+
+  it("keeps A4 proportions whatever it is asked to do", () => {
+    const a = clampCropArea({ x: 0, y: 0, width: 2000, height: 300 }, 3000, 4000, "page");
+    expect(a.width / a.height).toBeCloseTo(1 / Math.SQRT2, 3);
+  });
+
+  it("zooms in on a phone photo as far as a 150dpi Page", () => {
+    const start = defaultCropArea(3000, 4000, "page");
+    const a = zoomCropArea(start, 10, { x: 1500, y: 2000 }, 3000, 4000, "page");
+    expect(a.width).toBeCloseTo(1240.6, 1); // 794px sheet x 150/96
+    expect(a.width / a.height).toBeCloseTo(1 / Math.SQRT2, 3);
+  });
+
+  it("leaves a MyKad Crop card-shaped", () => {
+    expect(defaultCropArea(3000, 4000)).toEqual(defaultCropArea(3000, 4000, "card"));
+  });
+});
+
+describe("cropBox", () => {
+  it("is the card box for a Card face, however the photo is turned", () => {
+    expect(cropBox("card", 3000, 4000)).toEqual({ width: 323, height: 204 });
+  });
+
+  it("is the A4 sheet for a Page, turned to the photo", () => {
+    expect(cropBox("page", 3000, 4000)).toEqual({ width: 794, height: 1123 });
+    expect(cropBox("page", 4000, 3000)).toEqual({ width: 1123, height: 794 });
   });
 });
