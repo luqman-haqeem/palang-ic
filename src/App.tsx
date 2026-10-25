@@ -12,6 +12,8 @@ import { AdvancedSettings } from "@/ui/AdvancedSettings";
 import { Dropzone } from "@/ui/Dropzone";
 import { ExportBar } from "@/ui/ExportBar";
 import { PalangTextField } from "@/ui/PalangTextField";
+import type { Scan } from "@/state/document";
+import { CropEditorPrototype } from "@/ui/prototype-crop/CropEditor.prototype"; // PROTOTYPE
 
 const FACES: CardFace[] = ["front", "back"];
 const today = () => isoToday(new Date());
@@ -22,6 +24,7 @@ export default function App() {
   const [saved, setSaved] = useState(loadLines);
   const [error, setError] = useState<string | null>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
+  const [pendingCrop, setPendingCrop] = useState<{ face: CardFace; scan: Scan } | null>(null); // PROTOTYPE
 
   function exportCopy(ext: "png" | "pdf") {
     const stage = stageRef.current;
@@ -90,6 +93,19 @@ export default function App() {
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 p-4 lg:flex-row">
+      {pendingCrop && ( // PROTOTYPE
+        <CropEditorPrototype
+          scan={pendingCrop.scan}
+          onApply={(scan) => {
+            dispatch({ type: "setScan", face: pendingCrop.face, scan });
+            setPendingCrop(null);
+          }}
+          onCancel={() => {
+            dispatch({ type: "setScan", face: pendingCrop.face, scan: pendingCrop.scan });
+            setPendingCrop(null);
+          }}
+        />
+      )}
       <section className="flex-1">
         <PageStage
           state={state}
@@ -122,7 +138,8 @@ export default function App() {
               scan={state.scans[face]}
               onLoad={(scan) => {
                 setError(null);
-                dispatch({ type: "setScan", face, scan });
+                if (import.meta.env.DEV) setPendingCrop({ face, scan }); // PROTOTYPE
+                else dispatch({ type: "setScan", face, scan });
               }}
               onRemove={() => dispatch({ type: "removeScan", face })}
               onError={setError}
