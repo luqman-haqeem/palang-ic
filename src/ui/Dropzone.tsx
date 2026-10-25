@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import type { SlotId } from "@/domain/copyLayout";
+import { type SlotId, slotKind } from "@/domain/copyLayout";
 import { loadScan } from "@/input/loadScan";
 import type { Scan } from "@/state/session";
 
@@ -23,7 +23,7 @@ export function Dropzone({ slot, scan, onLoad, onEdit, onRemove, onError }: Prop
     if (!file) return;
     setBusy(true);
     try {
-      onLoad(await loadScan(file));
+      onLoad(await loadScan(file, slotKind(slot)));
     } catch (err) {
       onError(err instanceof Error ? err.message : "That image could not be read.");
     } finally {

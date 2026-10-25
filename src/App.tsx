@@ -164,6 +164,7 @@ export default function App() {
         </div>
 
         <PalangTextField
+          kind={state.kind}
           line={state.line}
           saved={saved}
           onChange={(line) => dispatch({ type: "setLine", line })}
@@ -172,6 +173,7 @@ export default function App() {
 
         {loaded.length > 0 && (
           <AdvancedSettings
+            kind={state.kind}
             slots={layout.slots.filter((slot) => state.scans[slot.id])}
             showCornerRadius={state.kind === "mykad"}
             style={state.style}
