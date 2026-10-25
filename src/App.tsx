@@ -2,7 +2,7 @@ import { useEffect, useReducer, useRef, useState } from "react";
 import type Konva from "konva";
 import { isoToday } from "@/domain/clock";
 import { exportFilename } from "@/domain/filename";
-import { buildPdfBlob } from "@/export/buildPdf";
+import { buildPdfBlob, sheetOrientation } from "@/export/buildPdf";
 import { downloadBlob, downloadDataUrl, renderToDataUrl } from "@/export/renderToDataUrl";
 import { copyLayout, kindSlots, type SlotId } from "@/domain/copyLayout";
 import { needsCrop } from "@/domain/crop";
@@ -36,7 +36,7 @@ export default function App() {
         downloadDataUrl(url, filename);
       } else {
         const jpeg = renderToDataUrl(stage, { mimeType: "image/jpeg", quality: 0.92 });
-        downloadBlob(buildPdfBlob(jpeg), filename);
+        downloadBlob(buildPdfBlob(jpeg, sheetOrientation(copyLayout(state).sheet)), filename);
       }
       setSaved(rememberLine(state.line));
       setError(null);

@@ -35,4 +35,26 @@ describe("exportedPixelSize", () => {
   it("hits the same size from a 360px phone, which previously exported ~124dpi", () => {
     expect(exportedPixelSize(328 / PAGE.widthPx)).toEqual(A4_AT_300DPI);
   });
+
+  describe("for a landscape sheet", () => {
+    const LANDSCAPE_SHEET = { width: PAGE.heightPx, height: PAGE.widthPx };
+    const LANDSCAPE_A4_AT_300DPI = { width: 3509, height: 2481 };
+
+    it("hits landscape A4 at 300dpi on an unscaled preview", () => {
+      expect(exportedPixelSize(1, LANDSCAPE_SHEET)).toEqual(LANDSCAPE_A4_AT_300DPI);
+    });
+
+    it("hits the same size from a 776px desktop holder", () => {
+      // The preview fits the landscape sheet's own width, not the portrait one's.
+      expect(exportedPixelSize(776 / PAGE.heightPx, LANDSCAPE_SHEET)).toEqual(
+        LANDSCAPE_A4_AT_300DPI,
+      );
+    });
+
+    it("hits the same size from a 360px phone", () => {
+      expect(exportedPixelSize(328 / PAGE.heightPx, LANDSCAPE_SHEET)).toEqual(
+        LANDSCAPE_A4_AT_300DPI,
+      );
+    });
+  });
 });
