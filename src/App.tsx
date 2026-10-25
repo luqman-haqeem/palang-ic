@@ -82,7 +82,7 @@ export default function App() {
       const current = state.placements[selected];
       dispatch({
         type: "setPlacement",
-        face: selected,
+        slot: selected,
         patch: { cx: current.cx + (move.cx ?? 0), cy: current.cy + (move.cy ?? 0) },
       });
     };
@@ -102,7 +102,7 @@ export default function App() {
           scan={state.scans[cropping]}
           radius={state.cornerRadius}
           onApply={(crop) => {
-            dispatch({ type: "setCrop", face: cropping, crop });
+            dispatch({ type: "setCrop", slot: cropping, crop });
             setCropping(null);
           }}
           onCancel={() => setCropping(null)}
@@ -114,7 +114,7 @@ export default function App() {
           layout={layout}
           selected={selected}
           onSelect={setSelected}
-          onDragEnd={(face, patch) => dispatch({ type: "setPlacement", face, patch })}
+          onDragEnd={(face, patch) => dispatch({ type: "setPlacement", slot: face, patch })}
           stageRef={stageRef}
         />
       </section>
@@ -141,12 +141,12 @@ export default function App() {
               scan={state.scans[face]}
               onLoad={(scan) => {
                 setError(null);
-                dispatch({ type: "setScan", face, scan });
+                dispatch({ type: "setScan", slot: face, scan });
                 // Kept uncropped if the user cancels: nothing they chose is discarded.
                 if (needsCrop(scan.width, scan.height)) setCropping(face);
               }}
               onEdit={() => setCropping(face)}
-              onRemove={() => dispatch({ type: "removeScan", face })}
+              onRemove={() => dispatch({ type: "removeScan", slot: face })}
               onError={setError}
             />
           ))}
@@ -167,8 +167,8 @@ export default function App() {
             cornerRadius={state.cornerRadius}
             onStyleChange={(patch) => dispatch({ type: "setStyle", patch })}
             onCornerRadiusChange={(radius) => dispatch({ type: "setCornerRadius", radius })}
-            onPlacementChange={(face, patch) => dispatch({ type: "setPlacement", face, patch })}
-            onPlacementReset={(face) => dispatch({ type: "resetPlacement", face })}
+            onPlacementChange={(face, patch) => dispatch({ type: "setPlacement", slot: face, patch })}
+            onPlacementReset={(face) => dispatch({ type: "resetPlacement", slot: face })}
           />
         )}
 

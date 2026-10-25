@@ -5,7 +5,7 @@ import { canExport, initialState, reducer, type Scan } from "@/state/session";
 const TODAY = "2026-10-01";
 const fakeScan = (): Scan => ({ width: 856, height: 540, bitmap: {} as ImageBitmap });
 const withScan = () =>
-  reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
+  reducer(initialState(TODAY), { type: "setScan", slot: "front", scan: fakeScan() });
 
 describe("DEFAULT_PALANG_TEXT", () => {
   it("is a complete sentence, not a fragment to finish", () => {

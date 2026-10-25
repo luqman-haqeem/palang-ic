@@ -1,4 +1,4 @@
-import { copyLayout, defaultPlacement, layoutSlot } from "@/domain/copyLayout";
+import { copyLayout, defaultPlacement, layoutSlot, type SlotId } from "@/domain/copyLayout";
 import type { Crop } from "@/domain/crop";
 import { cardCornerRadius, type CardFace, RADIUS_MAX, RADIUS_MIN } from "@/domain/page";
 import {
@@ -36,15 +36,15 @@ export type SessionState = {
 };
 
 export type Action =
-  | { type: "setScan"; face: CardFace; scan: Scan }
-  | { type: "removeScan"; face: CardFace }
-  | { type: "setCrop"; face: CardFace; crop: Crop }
+  | { type: "setScan"; slot: SlotId; scan: Scan }
+  | { type: "removeScan"; slot: SlotId }
+  | { type: "setCrop"; slot: SlotId; crop: Crop }
   | { type: "setLine"; line: string }
   | { type: "setDate"; date: string }
   | { type: "setStyle"; patch: Partial<BandStyle> }
   | { type: "setCornerRadius"; radius: number }
-  | { type: "setPlacement"; face: CardFace; patch: Partial<PalangPlacement> }
-  | { type: "resetPlacement"; face: CardFace }
+  | { type: "setPlacement"; slot: SlotId; patch: Partial<PalangPlacement> }
+  | { type: "resetPlacement"; slot: SlotId }
   | { type: "clearAll"; today: string };
 
 export function initialState(today: string): SessionState {
@@ -63,18 +63,18 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), h
 export function reducer(state: SessionState, action: Action): SessionState {
   switch (action.type) {
     case "setScan":
-      return { ...state, scans: { ...state.scans, [action.face]: action.scan } };
+      return { ...state, scans: { ...state.scans, [action.slot]: action.scan } };
 
     case "removeScan": {
       const scans = { ...state.scans };
-      delete scans[action.face];
+      delete scans[action.slot];
       return { ...state, scans };
     }
 
     case "setCrop": {
-      const scan = state.scans[action.face];
+      const scan = state.scans[action.slot];
       if (!scan) return state;
-      return { ...state, scans: { ...state.scans, [action.face]: { ...scan, crop: action.crop } } };
+      return { ...state, scans: { ...state.scans, [action.slot]: { ...scan, crop: action.crop } } };
     }
 
     case "setLine":
@@ -101,18 +101,18 @@ export function reducer(state: SessionState, action: Action): SessionState {
       return { ...state, cornerRadius: clamp(action.radius, RADIUS_MIN, RADIUS_MAX) };
 
     case "setPlacement": {
-      const merged = { ...state.placements[action.face], ...action.patch };
-      const placements = { ...state.placements, [action.face]: merged };
+      const merged = { ...state.placements[action.slot], ...action.patch };
+      const placements = { ...state.placements, [action.slot]: merged };
       // Stored exactly where the Copy layout draws it, so state and preview
       // cannot disagree about where the band is.
-      const { cx, cy } = layoutSlot(copyLayout({ ...state, placements }), action.face).band;
-      return { ...state, placements: { ...placements, [action.face]: { cx, cy } } };
+      const { cx, cy } = layoutSlot(copyLayout({ ...state, placements }), action.slot).band;
+      return { ...state, placements: { ...placements, [action.slot]: { cx, cy } } };
     }
 
     case "resetPlacement":
       return {
         ...state,
-        placements: { ...state.placements, [action.face]: defaultPlacement(action.face) },
+        placements: { ...state.placements, [action.slot]: defaultPlacement(action.slot) },
       };
 
     case "clearAll":

@@ -65,7 +65,7 @@ describe("placements", () => {
   it("clamps a dragged centre to its own card", () => {
     const s = reducer(initialState(TODAY), {
       type: "setPlacement",
-      face: "front",
+      slot: "front",
       patch: { cx: -999, cy: -999 },
     });
     const rect = cardRect("front");
@@ -75,7 +75,7 @@ describe("placements", () => {
   it("moves one face without moving the other", () => {
     const s = reducer(initialState(TODAY), {
       type: "setPlacement",
-      face: "back",
+      slot: "back",
       patch: { cx: 300 },
     });
     expect(s.placements.back.cx).toBe(300);
@@ -83,9 +83,9 @@ describe("placements", () => {
   });
 
   it("resets only the requested face", () => {
-    let s = reducer(initialState(TODAY), { type: "setPlacement", face: "front", patch: { cx: 300 } });
-    s = reducer(s, { type: "setPlacement", face: "back", patch: { cx: 300 } });
-    s = reducer(s, { type: "resetPlacement", face: "front" });
+    let s = reducer(initialState(TODAY), { type: "setPlacement", slot: "front", patch: { cx: 300 } });
+    s = reducer(s, { type: "setPlacement", slot: "back", patch: { cx: 300 } });
+    s = reducer(s, { type: "resetPlacement", slot: "front" });
     expect(s.placements.front).toEqual(defaultPlacement("front"));
     expect(s.placements.back.cx).toBe(300);
   });
@@ -93,16 +93,16 @@ describe("placements", () => {
 
 describe("scans", () => {
   it("adds and removes one face without touching the other", () => {
-    let s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
-    s = reducer(s, { type: "setScan", face: "back", scan: fakeScan() });
-    s = reducer(s, { type: "removeScan", face: "back" });
+    let s = reducer(initialState(TODAY), { type: "setScan", slot: "front", scan: fakeScan() });
+    s = reducer(s, { type: "setScan", slot: "back", scan: fakeScan() });
+    s = reducer(s, { type: "removeScan", slot: "back" });
     expect(s.scans.front).toBeDefined();
     expect(s.scans.back).toBeUndefined();
   });
 
   it("keeps a face's placement when its scan is replaced", () => {
-    let s = reducer(initialState(TODAY), { type: "setPlacement", face: "front", patch: { cx: 300 } });
-    s = reducer(s, { type: "setScan", face: "front", scan: fakeScan() });
+    let s = reducer(initialState(TODAY), { type: "setPlacement", slot: "front", patch: { cx: 300 } });
+    s = reducer(s, { type: "setScan", slot: "front", scan: fakeScan() });
     expect(s.placements.front.cx).toBe(300);
   });
 });
@@ -111,22 +111,22 @@ describe("crops", () => {
   const crop = { rotation: 90 as const, area: { x: 0, y: 100, width: 1600, height: 1010 } };
 
   it("frames one face without touching the other", () => {
-    let s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
-    s = reducer(s, { type: "setScan", face: "back", scan: fakeScan() });
-    s = reducer(s, { type: "setCrop", face: "front", crop });
+    let s = reducer(initialState(TODAY), { type: "setScan", slot: "front", scan: fakeScan() });
+    s = reducer(s, { type: "setScan", slot: "back", scan: fakeScan() });
+    s = reducer(s, { type: "setCrop", slot: "front", crop });
     expect(s.scans.front?.crop).toEqual(crop);
     expect(s.scans.back?.crop).toBeUndefined();
   });
 
   it("drops the crop when a new image is uploaded for that face", () => {
-    let s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
-    s = reducer(s, { type: "setCrop", face: "front", crop });
-    s = reducer(s, { type: "setScan", face: "front", scan: fakeScan(3000, 4000) });
+    let s = reducer(initialState(TODAY), { type: "setScan", slot: "front", scan: fakeScan() });
+    s = reducer(s, { type: "setCrop", slot: "front", crop });
+    s = reducer(s, { type: "setScan", slot: "front", scan: fakeScan(3000, 4000) });
     expect(s.scans.front?.crop).toBeUndefined();
   });
 
   it("ignores a crop for a face with no image", () => {
-    const s = reducer(initialState(TODAY), { type: "setCrop", face: "back", crop });
+    const s = reducer(initialState(TODAY), { type: "setCrop", slot: "back", crop });
     expect(s.scans.back).toBeUndefined();
   });
 });
@@ -151,7 +151,7 @@ describe("canExport", () => {
   });
 
   it("is false with a scan once the text has been cleared", () => {
-    let s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
+    let s = reducer(initialState(TODAY), { type: "setScan", slot: "front", scan: fakeScan() });
     s = reducer(s, { type: "setLine", line: "" });
     expect(canExport(s)).toBe(false);
   });
@@ -159,13 +159,13 @@ describe("canExport", () => {
   it("is false when the text is only whitespace", () => {
     // Two red lines with no sentence between them looks marked while granting
     // no limit on use, which is worse than no palang at all.
-    let s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
+    let s = reducer(initialState(TODAY), { type: "setScan", slot: "front", scan: fakeScan() });
     s = reducer(s, { type: "setLine", line: "    " });
     expect(canExport(s)).toBe(false);
   });
 
   it("is true with one scan and some text", () => {
-    let s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
+    let s = reducer(initialState(TODAY), { type: "setScan", slot: "front", scan: fakeScan() });
     s = reducer(s, { type: "setLine", line: "UNTUK BANK SAHAJA" });
     expect(canExport(s)).toBe(true);
   });
@@ -173,7 +173,7 @@ describe("canExport", () => {
 
 describe("clearAll", () => {
   it("returns to the initial state", () => {
-    let s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
+    let s = reducer(initialState(TODAY), { type: "setScan", slot: "front", scan: fakeScan() });
     s = reducer(s, { type: "setLine", line: "X" });
     s = reducer(s, { type: "clearAll", today: TODAY });
     expect(s).toEqual(initialState(TODAY));
@@ -182,8 +182,8 @@ describe("clearAll", () => {
 
 describe("persistence invariant", () => {
   it("writes nothing to localStorage when scans and text are set", () => {
-    let s = reducer(initialState(TODAY), { type: "setScan", face: "front", scan: fakeScan() });
-    s = reducer(s, { type: "setScan", face: "back", scan: fakeScan() });
+    let s = reducer(initialState(TODAY), { type: "setScan", slot: "front", scan: fakeScan() });
+    s = reducer(s, { type: "setScan", slot: "back", scan: fakeScan() });
     s = reducer(s, { type: "setLine", line: "UNTUK BANK SAHAJA" });
 
     const keys = Object.keys(localStorage);
