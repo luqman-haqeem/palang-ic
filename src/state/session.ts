@@ -56,6 +56,7 @@ export type Action =
   | { type: "setScan"; slot: SlotId; scan: Scan }
   | { type: "removeScan"; slot: SlotId }
   | { type: "setCrop"; slot: SlotId; crop: Crop }
+  | { type: "resetCrop"; slot: SlotId }
   | { type: "setLine"; line: string }
   | { type: "setDate"; date: string }
   | { type: "setStyle"; patch: Partial<BandStyle> }
@@ -114,10 +115,18 @@ export function reducer(state: SessionState, action: Action): SessionState {
       return { ...state, scans };
     }
 
-    case "setCrop": {
+    case "setCrop":
+    case "resetCrop": {
       const scan = state.scans[action.slot];
       if (!scan) return state;
-      return { ...state, scans: { ...state.scans, [action.slot]: { ...scan, crop: action.crop } } };
+      const framed: Scan = { ...scan };
+      if (action.type === "setCrop") framed.crop = action.crop;
+      else delete framed.crop;
+      const next = { ...state, scans: { ...state.scans, [action.slot]: framed } };
+      // A Crop changes what fills a Page's sheet, so its band starts afresh on
+      // what is now drawn. A card's box is the same either way.
+      if (action.slot !== "page") return next;
+      return settle(next, "page", defaultPlacement("page", framed));
     }
 
     case "setLine":

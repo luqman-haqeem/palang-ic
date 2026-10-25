@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { cardRect } from "@/domain/page";
 import { copyLayout, defaultPlacement, layoutSlot } from "@/domain/copyLayout";
+import { initialCrop } from "@/domain/crop";
 import { DEFAULT_BAND_STYLE, DEFAULT_PALANG_TEXT } from "@/domain/palang";
 import { canExport, initialState, reducer, type Scan } from "@/state/session";
 import { SAVED_LINES_KEY } from "@/state/savedLines";
@@ -128,6 +129,76 @@ describe("crops", () => {
   it("ignores a crop for a face with no image", () => {
     const s = reducer(initialState(TODAY), { type: "setCrop", slot: "back", crop });
     expect(s.scans.back).toBeUndefined();
+  });
+
+  it("leaves a card's band where it was when the card is cropped", () => {
+    let s = reducer(initialState(TODAY), { type: "setScan", slot: "front", scan: fakeScan() });
+    s = reducer(s, { type: "setPlacement", slot: "front", patch: { cx: 300 } });
+    s = reducer(s, { type: "setCrop", slot: "front", crop });
+    expect(s.placements.front.cx).toBe(300);
+  });
+
+  it("resets a face's crop without touching the image", () => {
+    const scan = fakeScan();
+    let s = reducer(initialState(TODAY), { type: "setScan", slot: "front", scan });
+    s = reducer(s, { type: "setCrop", slot: "front", crop });
+    s = reducer(s, { type: "resetCrop", slot: "front" });
+    expect(s.scans.front).toEqual(scan);
+  });
+});
+
+describe("Page crops", () => {
+  // A tall Page is fitted 561.5px wide, from x 116.25; cropped, it fills the
+  // 794 x 1123 sheet.
+  const tall = () => fakeScan(1000, 2000);
+  const pageCrop = initialCrop(1000, 2000, "page");
+  const onPage = (...actions: Parameters<typeof reducer>[1][]) =>
+    actions.reduce(
+      reducer,
+      reducer(reducer(initialState(TODAY), { type: "setKind", kind: "page" }), {
+        type: "setStyle",
+        patch: { angleDeg: 0 },
+      }),
+    );
+
+  it("stores the Crop beside the Page Scan", () => {
+    const s = onPage(
+      { type: "setScan", slot: "page", scan: tall() },
+      { type: "setCrop", slot: "page", crop: pageCrop },
+    );
+    expect(s.scans.page?.crop).toEqual(pageCrop);
+    expect(s.scans.page?.width).toBe(1000);
+  });
+
+  it("starts the band afresh near the cropped Page's top-left corner", () => {
+    const s = onPage(
+      { type: "setScan", slot: "page", scan: tall() },
+      { type: "setPlacement", slot: "page", patch: { cx: 400, cy: 600 } },
+      { type: "setCrop", slot: "page", crop: pageCrop },
+    );
+    // Where it starts on an uncropped Page that already fills the sheet.
+    const a4 = onPage({ type: "setScan", slot: "page", scan: fakeScan(794, 1123) });
+    expect(s.placements.page).toEqual(a4.placements.page);
+    expect(s.placements.page.cy).toBeCloseTo(0.1 * 1123, 6);
+  });
+
+  it("restores the uncropped Page on reset, its band back on the whole Page", () => {
+    const s = onPage(
+      { type: "setScan", slot: "page", scan: tall() },
+      { type: "setCrop", slot: "page", crop: pageCrop },
+      { type: "resetCrop", slot: "page" },
+    );
+    expect(s.scans.page?.crop).toBeUndefined();
+    expect(s.placements.page.cx).toBeCloseTo(116.25 + 0.16 * 561.5, 6);
+  });
+
+  it("clears the Crop when a new Page Scan arrives", () => {
+    const s = onPage(
+      { type: "setScan", slot: "page", scan: tall() },
+      { type: "setCrop", slot: "page", crop: pageCrop },
+      { type: "setScan", slot: "page", scan: tall() },
+    );
+    expect(s.scans.page?.crop).toBeUndefined();
   });
 });
 
