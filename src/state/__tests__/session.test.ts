@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { cardRect } from "@/domain/page";
-import { DEFAULT_BAND_STYLE, defaultPlacement, DEFAULT_PALANG_TEXT } from "@/domain/palang";
+import { defaultPlacement } from "@/domain/copyLayout";
+import { DEFAULT_BAND_STYLE, DEFAULT_PALANG_TEXT } from "@/domain/palang";
 import { canExport, initialState, reducer, type Scan } from "@/state/session";
 import { SAVED_LINES_KEY } from "@/state/savedLines";
 

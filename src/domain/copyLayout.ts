@@ -1,6 +1,6 @@
 import { type CardImageGeometry, cardImageGeometry } from "@/domain/crop";
 import { cardRect, type CardFace, containFit, PAGE, type Rect } from "@/domain/page";
-import { bandGeometry } from "@/domain/palang";
+import { bandGeometry, type PalangPlacement } from "@/domain/palang";
 import type { Scan, SessionState } from "@/state/session";
 
 /** A box on the sheet that one Document's Scan is drawn into. */
@@ -63,8 +63,27 @@ export function layoutSlot(layout: CopyLayout, id: SlotId): SlotLayout {
   return slot;
 }
 
-/** Pulls a centre into `bounds`. Shared by the reducer and the band's drag
- *  bounds, so neither can let a band go where the other would not. */
+/** Where the band's centre sits by default, as a fraction of card width and
+ *  height. Tuned by hand against a real MyKad so the band crosses the top-left
+ *  corner clear of the photo, name, IC number and date of birth. The band runs
+ *  off the corner at this position, which is intended — a palang is a stroke
+ *  drawn across a copy, not a graphic fitted inside it. */
+const BAND_X_FRACTION = 0.105;
+const BAND_Y_FRACTION = 0.196;
+
+export function defaultPlacement(id: SlotId): PalangPlacement {
+  const rect = cardRect(id);
+  return {
+    cx: rect.x + Math.round(rect.width * BAND_X_FRACTION),
+    cy: rect.y + Math.round(rect.height * BAND_Y_FRACTION),
+  };
+}
+
+/** Pulls a centre into `bounds`. The reducer and the band's `dragBoundFunc`
+ *  both call it with the same layout's bounds. A reducer clamp alone is not
+ *  enough: for a controlled react-konva node, a clamped value equal to the one
+ *  already in state is not re-applied to the node, leaving the band where it
+ *  was dropped. */
 export function clampCentre(
   bounds: CentreBounds,
   centre: { cx: number; cy: number },

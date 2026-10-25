@@ -5,6 +5,7 @@ import { exportFilename } from "@/domain/filename";
 import type { CardFace } from "@/domain/page";
 import { buildPdfBlob } from "@/export/buildPdf";
 import { downloadBlob, downloadDataUrl, renderToDataUrl } from "@/export/renderToDataUrl";
+import { copyLayout } from "@/domain/copyLayout";
 import { needsCrop } from "@/domain/crop";
 import { canExport, initialState, reducer } from "@/state/session";
 import { forgetLine, loadLines, rememberLine } from "@/state/savedLines";
@@ -90,6 +91,7 @@ export default function App() {
   }, [selected, cropping, state.placements]);
 
   const loadedFaces = FACES.filter((face) => state.scans[face]);
+  const layout = copyLayout(state);
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 p-4 lg:flex-row">
@@ -109,6 +111,7 @@ export default function App() {
       <section className="flex-1">
         <PageStage
           state={state}
+          layout={layout}
           selected={selected}
           onSelect={setSelected}
           onDragEnd={(face, patch) => dispatch({ type: "setPlacement", face, patch })}
@@ -158,7 +161,7 @@ export default function App() {
 
         {loadedFaces.length > 0 && (
           <AdvancedSettings
-            faces={loadedFaces}
+            slots={layout.slots.filter((slot) => state.scans[slot.id])}
             style={state.style}
             placements={state.placements}
             cornerRadius={state.cornerRadius}

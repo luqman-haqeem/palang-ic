@@ -1,9 +1,12 @@
+import type { CentreBounds } from "@/domain/copyLayout";
 import type { CardFace } from "@/domain/page";
-import { type PalangPlacement, placementBounds } from "@/domain/palang";
+import type { PalangPlacement } from "@/domain/palang";
 
 type Props = {
   face: CardFace;
   placement: PalangPlacement;
+  /** From the Copy layout: the same bounds that limit dragging. */
+  bounds: CentreBounds;
   onChange: (patch: Partial<PalangPlacement>) => void;
   onReset: () => void;
 };
@@ -11,9 +14,7 @@ type Props = {
 /** Position is the only per-face setting, because the fields that must stay
  *  legible sit differently on each side. Sliders as well as dragging: dragging
  *  a small band with a thumb is fiddly, and the slider ends are the card edges. */
-export function PlacementControls({ face, placement, onChange, onReset }: Props) {
-  const bounds = placementBounds(face);
-
+export function PlacementControls({ face, placement, bounds, onChange, onReset }: Props) {
   return (
     <fieldset className="rounded border border-neutral-200 p-3">
       <legend className="px-1 text-sm font-medium capitalize">{face} position</legend>

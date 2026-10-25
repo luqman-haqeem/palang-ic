@@ -1,13 +1,7 @@
 import type Konva from "konva";
 import { Group, Image as KonvaImage, Rect as KonvaRect } from "react-konva";
-import {
-  cardRect,
-  clampCornerRadius,
-  containFit,
-  type CardFace,
-  type Rect,
-} from "@/domain/page";
-import { cardImageGeometry } from "@/domain/crop";
+import type { SlotLayout } from "@/domain/copyLayout";
+import { clampCornerRadius, type Rect } from "@/domain/page";
 import type { Scan } from "@/state/session";
 
 /** Rounded-rect path, used as a clip so a scan's square corners do not read as
@@ -24,19 +18,21 @@ function roundedRectPath(ctx: Konva.Context, rect: Rect, radius: number): void {
   ctx.closePath();
 }
 
-type Props = { face: CardFace; scan?: Scan; radius: number };
+/** A thin reader of the Copy layout: every position and size comes from
+ *  `layout`, and `scan` supplies only the pixels. */
+type Props = { layout: SlotLayout; scan?: Scan };
 
-export function CardSlot({ face, scan, radius }: Props) {
-  const rect = cardRect(face);
+export function CardSlot({ layout, scan }: Props) {
+  const { slot, box, cornerRadius, image } = layout;
 
-  if (!scan) {
+  if (!scan || !image) {
     return (
       <KonvaRect
-        x={rect.x}
-        y={rect.y}
-        width={rect.width}
-        height={rect.height}
-        cornerRadius={radius}
+        x={slot.x}
+        y={slot.y}
+        width={slot.width}
+        height={slot.height}
+        cornerRadius={cornerRadius}
         stroke="#d4d4d4"
         dash={[6, 6]}
         strokeWidth={1}
@@ -46,31 +42,9 @@ export function CardSlot({ face, scan, radius }: Props) {
     );
   }
 
-  if (scan.crop) {
-    // A Crop is card-shaped, so it fills the slot exactly and the slot is what
-    // gets rounded.
-    const node = cardImageGeometry(scan.crop, scan.width, scan.height, rect);
-    return (
-      <Group clipFunc={(ctx) => roundedRectPath(ctx, rect, radius)}>
-        <KonvaImage image={scan.bitmap as unknown as CanvasImageSource} {...node} />
-      </Group>
-    );
-  }
-
-  const fitted = containFit(scan.width, scan.height, rect);
-
-  // Clipped to the fitted image, not the slot: a scan whose aspect ratio differs
-  // from the card is letterboxed, and rounding the slot would leave the image's
-  // own corners square inside it.
   return (
-    <Group clipFunc={(ctx) => roundedRectPath(ctx, fitted, radius)}>
-      <KonvaImage
-        image={scan.bitmap as unknown as CanvasImageSource}
-        x={fitted.x}
-        y={fitted.y}
-        width={fitted.width}
-        height={fitted.height}
-      />
+    <Group clipFunc={(ctx) => roundedRectPath(ctx, box, cornerRadius)}>
+      <KonvaImage image={scan.bitmap as unknown as CanvasImageSource} {...image} />
     </Group>
   );
 }

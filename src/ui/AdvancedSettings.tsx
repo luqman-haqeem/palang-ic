@@ -1,3 +1,4 @@
+import type { SlotLayout } from "@/domain/copyLayout";
 import type { CardFace } from "@/domain/page";
 import type { BandStyle, PalangPlacement } from "@/domain/palang";
 import { BandStyleControls } from "@/ui/BandStyleControls";
@@ -6,7 +7,8 @@ import { PlacementControls } from "@/ui/PlacementControls";
 import { SettingsReadout } from "@/ui/SettingsReadout";
 
 type Props = {
-  faces: CardFace[];
+  /** The Copy layout's slots that have a Scan, each with a position control. */
+  slots: SlotLayout[];
   style: BandStyle;
   placements: Record<CardFace, PalangPlacement>;
   cornerRadius: number;
@@ -20,7 +22,7 @@ type Props = {
  *  most uses need none of this; it is here for the copy a recipient wants
  *  marked differently. */
 export function AdvancedSettings({
-  faces,
+  slots,
   style,
   placements,
   cornerRadius,
@@ -37,13 +39,14 @@ export function AdvancedSettings({
       <div className="space-y-3 p-3 pt-0">
         <BandStyleControls style={style} onChange={onStyleChange} />
         <CardStyleControls cornerRadius={cornerRadius} onChange={onCornerRadiusChange} />
-        {faces.map((face) => (
+        {slots.map(({ id, band }) => (
           <PlacementControls
-            key={face}
-            face={face}
-            placement={placements[face]}
-            onChange={(patch) => onPlacementChange(face, patch)}
-            onReset={() => onPlacementReset(face)}
+            key={id}
+            face={id}
+            placement={placements[id]}
+            bounds={band.bounds}
+            onChange={(patch) => onPlacementChange(id, patch)}
+            onReset={() => onPlacementReset(id)}
           />
         ))}
         <SettingsReadout style={style} placements={placements} cornerRadius={cornerRadius} />

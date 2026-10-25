@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampCentre, copyLayout, layoutSlot } from "@/domain/copyLayout";
+import { copyLayout, layoutSlot } from "@/domain/copyLayout";
 import { initialState, type Scan } from "@/state/session";
 
 const TODAY = "2026-10-01";
@@ -69,23 +69,6 @@ describe("copyLayout band geometry", () => {
     const s = initialState(TODAY);
     const placed = { ...s, placements: { ...s.placements, front: { cx: -999, cy: 9999 } } };
     expect(layoutSlot(copyLayout(placed), "front").band).toMatchObject({ cx: 235, cy: 298 });
-  });
-});
-
-describe("clampCentre", () => {
-  const bounds = layoutSlot(copyLayout(initialState(TODAY)), "front").band.bounds;
-
-  it("leaves a centre that is already inside untouched", () => {
-    expect(clampCentre(bounds, { cx: 332, cy: 155 })).toEqual({ cx: 332, cy: 155 });
-  });
-
-  it("keeps a band dragged into the gap between the faces on its own card", () => {
-    expect(clampCentre(bounds, { cx: 332, cy: 318 })).toEqual({ cx: 332, cy: 298 });
-  });
-
-  it("is idempotent, so re-clamping an already-clamped centre changes nothing", () => {
-    const once = clampCentre(bounds, { cx: -50, cy: 9999 });
-    expect(clampCentre(bounds, once)).toEqual(once);
   });
 });
 

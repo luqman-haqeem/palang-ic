@@ -1,13 +1,12 @@
+import { copyLayout, defaultPlacement, layoutSlot } from "@/domain/copyLayout";
 import type { Crop } from "@/domain/crop";
 import { cardCornerRadius, type CardFace, RADIUS_MAX, RADIUS_MIN } from "@/domain/page";
 import {
   ANGLE_MAX,
   ANGLE_MIN,
   type BandStyle,
-  clampCentreToFace,
   DEFAULT_BAND_STYLE,
   DEFAULT_PALANG_TEXT,
-  defaultPlacement,
   FONT_MAX,
   FONT_MIN,
   DEFAULT_INK,
@@ -103,13 +102,11 @@ export function reducer(state: SessionState, action: Action): SessionState {
 
     case "setPlacement": {
       const merged = { ...state.placements[action.face], ...action.patch };
-      return {
-        ...state,
-        placements: {
-          ...state.placements,
-          [action.face]: clampCentreToFace(action.face, merged),
-        },
-      };
+      const placements = { ...state.placements, [action.face]: merged };
+      // Stored exactly where the Copy layout draws it, so state and preview
+      // cannot disagree about where the band is.
+      const { cx, cy } = layoutSlot(copyLayout({ ...state, placements }), action.face).band;
+      return { ...state, placements: { ...placements, [action.face]: { cx, cy } } };
     }
 
     case "resetPlacement":
