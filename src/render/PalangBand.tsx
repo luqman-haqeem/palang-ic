@@ -34,9 +34,16 @@ export function PalangBand({ band, style, line, selected, onSelect, onDragEnd }:
       rotation={style.angleDeg}
       opacity={style.opacity}
       draggable
-      dragBoundFunc={(pos) => {
-        const clamped = clampCentre(bounds, { cx: pos.x, cy: pos.y });
-        return { x: clamped.cx, y: clamped.cy };
+      dragBoundFunc={function (this: Konva.Node, pos) {
+        // `pos` is in absolute (preview-scaled) px, but `bounds` are in sheet
+        // px: unscaled, the limits shrink with the preview and a band on a
+        // phone-width preview stops short of the sheet edge.
+        const toSheet = this.getParent()!.getAbsoluteTransform().copy();
+        const toScreen = toSheet.copy();
+        toSheet.invert();
+        const local = toSheet.point(pos);
+        const clamped = clampCentre(bounds, { cx: local.x, cy: local.y });
+        return toScreen.point({ x: clamped.cx, y: clamped.cy });
       }}
       onClick={onSelect}
       onTap={onSelect}
