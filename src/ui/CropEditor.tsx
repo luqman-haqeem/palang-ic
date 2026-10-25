@@ -25,7 +25,11 @@ type Props = {
 
 const LABEL: Record<CardFace, string> = { front: "front", back: "back" };
 const ZOOM_STEP = 1.25;
-const WHEEL_STEP = 1.1;
+/** Zoom per pixel of wheel travel: one ~100px mouse notch is ~10%. A trackpad
+ *  pinch arrives as ctrl+wheel in much smaller deltas, so it gets more per px. */
+const WHEEL_ZOOM_PER_PX = 0.001;
+const PINCH_ZOOM_PER_PX = 0.01;
+const LINE_PX = 16;
 const NUDGE_PX = 20;
 
 type Point = { x: number; y: number };
@@ -36,6 +40,9 @@ type Point = { x: number; y: number };
 export function CropEditor({ face, scan, radius, onApply, onCancel }: Props) {
   const [crop, setCrop] = useState<Crop>(() => scan.crop ?? initialCrop(scan.width, scan.height));
   const box = useRef<HTMLDivElement>(null);
+  const dialog = useRef<HTMLDivElement>(null);
+  // Focus leaves whatever field the user was in, so keys reach the editor.
+  useEffect(() => dialog.current?.focus(), []);
   const [size, setSize] = useState({ width: 0, height: 0 });
 
   useLayoutEffect(() => {
@@ -57,9 +64,14 @@ export function CropEditor({ face, scan, radius, onApply, onCancel }: Props) {
     height: frameWidth / ratio,
   };
 
+  /** Screen px per turned-photo px: the frame is the area, scaled. */
+  const scaleFor = (area: Rect) => frame.width / area.width;
+
   /** Screen gestures become area changes against the latest crop, so a burst of
-   *  pointer events never works from a stale frame. */
+   *  pointer events never works from a stale frame. Ignored until the stage has
+   *  been measured: a zero-width frame would divide the area into NaN. */
   function changeArea(next: (c: Crop, turned: { width: number; height: number }) => Rect) {
+    if (frame.width <= 0) return;
     setCrop((c) => ({
       ...c,
       area: next(c, rotatedSize(scan.width, scan.height, c.rotation)),
@@ -68,9 +80,9 @@ export function CropEditor({ face, scan, radius, onApply, onCancel }: Props) {
 
   function pan(dx: number, dy: number) {
     changeArea((c, turned) => {
-      const s = frame.width / c.area.width;
+      const scale = scaleFor(c.area);
       return clampCropArea(
-        { ...c.area, x: c.area.x - dx / s, y: c.area.y - dy / s },
+        { ...c.area, x: c.area.x - dx / scale, y: c.area.y - dy / scale },
         turned.width,
         turned.height,
       );
@@ -79,8 +91,11 @@ export function CropEditor({ face, scan, radius, onApply, onCancel }: Props) {
 
   function zoom(factor: number, at: Point = centreOf(frame)) {
     changeArea((c, turned) => {
-      const s = frame.width / c.area.width;
-      const focus = { x: c.area.x + (at.x - frame.x) / s, y: c.area.y + (at.y - frame.y) / s };
+      const scale = scaleFor(c.area);
+      const focus = {
+        x: c.area.x + (at.x - frame.x) / scale,
+        y: c.area.y + (at.y - frame.y) / scale,
+      };
       return zoomCropArea(c.area, factor, focus, turned.width, turned.height);
     });
   }
@@ -128,6 +143,8 @@ export function CropEditor({ face, scan, radius, onApply, onCancel }: Props) {
   }
 
   // React's wheel listener is passive, so it cannot stop the page scrolling.
+  // Zoom follows how far the wheel moved, not how many events fired: a smooth
+  // mouse or trackpad sends many tiny ones. Sideways-only scrolling is ignored.
   const zoomRef = useRef(zoom);
   useLayoutEffect(() => {
     zoomRef.current = zoom;
@@ -137,8 +154,11 @@ export function CropEditor({ face, scan, radius, onApply, onCancel }: Props) {
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      if (e.deltaY === 0) return;
+      const px = e.deltaMode === WheelEvent.DOM_DELTA_LINE ? e.deltaY * LINE_PX : e.deltaY;
+      const perPx = e.ctrlKey ? PINCH_ZOOM_PER_PX : WHEEL_ZOOM_PER_PX;
       const r = el.getBoundingClientRect();
-      zoomRef.current(e.deltaY < 0 ? WHEEL_STEP : 1 / WHEEL_STEP, {
+      zoomRef.current(Math.exp(-px * perPx), {
         x: e.clientX - r.left,
         y: e.clientY - r.top,
       });
@@ -147,7 +167,12 @@ export function CropEditor({ face, scan, radius, onApply, onCancel }: Props) {
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
+  /** Leaves modified keys to the browser (ctrl/cmd +/- is page zoom) and leaves
+   *  keys typed into a field to the field. */
   function onKey(e: KeyboardEvent) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const target = e.target as HTMLElement | null;
+    if (target?.closest("input, textarea, [contenteditable]")) return;
     const moves: Record<string, Point> = {
       ArrowLeft: { x: NUDGE_PX, y: 0 },
       ArrowRight: { x: -NUDGE_PX, y: 0 },
@@ -173,28 +198,30 @@ export function CropEditor({ face, scan, radius, onApply, onCancel }: Props) {
 
   // The whole turned photo, placed so `crop.area` lands exactly on the frame.
   const turned = rotatedSize(scan.width, scan.height, crop.rotation);
-  const s = frame.width / crop.area.width;
+  const scale = scaleFor(crop.area);
   const photo = cardImageGeometry(
     { rotation: crop.rotation, area: { x: 0, y: 0, ...turned } },
     scan.width,
     scan.height,
     {
-      x: frame.x - crop.area.x * s,
-      y: frame.y - crop.area.y * s,
-      width: turned.width * s,
-      height: turned.height * s,
+      x: frame.x - crop.area.x * scale,
+      y: frame.y - crop.area.y * scale,
+      width: turned.width * scale,
+      height: turned.height * scale,
     },
   );
-  const { crop: _whole, ...placement } = photo;
+  const { crop: _whole, ...photoNode } = photo;
   const frameRadius = (radius * frame.width) / cardSize().width;
   const button = "rounded border border-neutral-300 px-3 py-1.5 text-sm";
 
   return (
     <div
+      ref={dialog}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-label={`Crop the ${LABEL[face]}`}
-      className="fixed inset-0 z-50 flex bg-black/80 sm:items-center sm:justify-center sm:p-4"
+      className="fixed inset-0 z-50 flex bg-black/80 outline-none sm:items-center sm:justify-center sm:p-4"
     >
       <div className="flex h-full w-full flex-col bg-white sm:h-auto sm:max-w-[640px] sm:rounded-lg">
         <div className="flex items-center justify-between p-3">
@@ -224,7 +251,7 @@ export function CropEditor({ face, scan, radius, onApply, onCancel }: Props) {
           {size.width > 0 && (
             <Stage width={size.width} height={size.height} listening={false}>
               <Layer>
-                <KonvaImage image={scan.bitmap as unknown as CanvasImageSource} {...placement} />
+                <KonvaImage image={scan.bitmap as unknown as CanvasImageSource} {...photoNode} />
               </Layer>
               <Layer>
                 <KonvaRect width={size.width} height={size.height} fill="rgba(0,0,0,0.6)" />

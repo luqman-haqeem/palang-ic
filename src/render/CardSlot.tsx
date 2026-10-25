@@ -49,10 +49,10 @@ export function CardSlot({ face, scan, radius }: Props) {
   if (scan.crop) {
     // A Crop is card-shaped, so it fills the slot exactly and the slot is what
     // gets rounded.
-    const g = cardImageGeometry(scan.crop, scan.width, scan.height, rect);
+    const node = cardImageGeometry(scan.crop, scan.width, scan.height, rect);
     return (
       <Group clipFunc={(ctx) => roundedRectPath(ctx, rect, radius)}>
-        <KonvaImage image={scan.bitmap as unknown as CanvasImageSource} {...g} />
+        <KonvaImage image={scan.bitmap as unknown as CanvasImageSource} {...node} />
       </Group>
     );
   }
