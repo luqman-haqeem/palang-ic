@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type BandLayout, copyLayout, layoutSlot } from "@/domain/copyLayout";
+import { initialCrop, rotateCrop } from "@/domain/crop";
 import type { BandStyle } from "@/domain/palang";
 import { initialState, type Scan, type SessionState } from "@/state/session";
 
@@ -104,6 +105,29 @@ describe("copyLayout for a Page", () => {
       offsetY: 0,
       rotation: 0,
     });
+  });
+});
+
+describe("copyLayout for a cropped Page", () => {
+  const cropped = (scan: Scan, crop: Scan["crop"]): Scan => ({ ...scan, crop });
+
+  it("fills the whole portrait sheet with a portrait Page Crop of a landscape photo", () => {
+    // A document photographed upright on a table, with the phone held sideways.
+    const photo = fakeScan(4000, 3000);
+    const crop = rotateCrop(initialCrop(4000, 3000, "page"), 90, 4000, 3000, "page");
+    const layout = copyLayout(pageSession(cropped(photo, crop)));
+    expect(layout.sheet).toEqual({ width: 794, height: 1123 });
+    expect(layoutSlot(layout, "page").box).toEqual({ x: 0, y: 0, width: 794, height: 1123 });
+  });
+
+  it("turns the sheet landscape once a quarter turn makes the Page Crop landscape", () => {
+    const photo = fakeScan(3000, 4000);
+    const crop = rotateCrop(initialCrop(3000, 4000, "page"), -90, 3000, 4000, "page");
+    const layout = copyLayout(pageSession(cropped(photo, crop)));
+    expect(layout.sheet).toEqual({ width: 1123, height: 794 });
+    const { box, image } = layoutSlot(layout, "page");
+    expect(box).toEqual({ x: 0, y: 0, width: 1123, height: 794 });
+    expect(image).toMatchObject({ rotation: 270, width: 794, height: 1123 });
   });
 });
 
