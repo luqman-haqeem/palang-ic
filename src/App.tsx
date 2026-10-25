@@ -2,7 +2,6 @@ import { useEffect, useReducer, useRef, useState } from "react";
 import type Konva from "konva";
 import { isoToday } from "@/domain/clock";
 import { exportFilename } from "@/domain/filename";
-import type { CardFace } from "@/domain/page";
 import { buildPdfBlob } from "@/export/buildPdf";
 import { downloadBlob, downloadDataUrl, renderToDataUrl } from "@/export/renderToDataUrl";
 import { copyLayout, kindSlots, type SlotId } from "@/domain/copyLayout";
@@ -25,7 +24,7 @@ export default function App() {
   const [saved, setSaved] = useState(loadLines);
   const [error, setError] = useState<string | null>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
-  const [cropping, setCropping] = useState<CardFace | null>(null);
+  const [cropping, setCropping] = useState<SlotId | null>(null);
 
   function exportCopy(ext: "png" | "pdf") {
     const stage = stageRef.current;
@@ -99,13 +98,23 @@ export default function App() {
       {cropping && state.scans[cropping] && (
         <CropEditor
           key={cropping}
-          face={cropping}
+          slot={cropping}
           scan={state.scans[cropping]}
-          radius={state.cornerRadius}
+          radius={cropping === "page" ? 0 : state.cornerRadius}
           onApply={(crop) => {
             dispatch({ type: "setCrop", slot: cropping, crop });
             setCropping(null);
           }}
+          // A Page has a whole, uncropped form to go back to; a card's Reset
+          // reframes it in the editor instead.
+          onReset={
+            cropping === "page"
+              ? () => {
+                  dispatch({ type: "resetCrop", slot: "page" });
+                  setCropping(null);
+                }
+              : undefined
+          }
           onCancel={() => setCropping(null)}
         />
       )}
@@ -152,11 +161,10 @@ export default function App() {
                 setError(null);
                 dispatch({ type: "setScan", slot, scan });
                 // Kept uncropped if the user cancels: nothing they chose is discarded.
+                // A Page is shown whole until the user asks to crop it.
                 if (slot !== "page" && needsCrop(scan.width, scan.height)) setCropping(slot);
               }}
-              // The crop editor frames a card; a Page is shown whole until
-              // it has a Crop of its own.
-              onEdit={slot === "page" ? undefined : () => setCropping(slot)}
+              onEdit={() => setCropping(slot)}
               onRemove={() => dispatch({ type: "removeScan", slot })}
               onError={setError}
             />
