@@ -8,6 +8,8 @@ import { SettingsReadout } from "@/ui/SettingsReadout";
 type Props = {
   /** The Copy layout's slots that have a Scan, each with a position control. */
   slots: SlotLayout[];
+  /** Card corner rounding is a MyKad setting; a Page is always square. */
+  showCornerRadius: boolean;
   style: BandStyle;
   placements: Record<SlotId, PalangPlacement>;
   cornerRadius: number;
@@ -22,6 +24,7 @@ type Props = {
  *  marked differently. */
 export function AdvancedSettings({
   slots,
+  showCornerRadius,
   style,
   placements,
   cornerRadius,
@@ -37,7 +40,9 @@ export function AdvancedSettings({
       </summary>
       <div className="space-y-3 p-3 pt-0">
         <BandStyleControls style={style} onChange={onStyleChange} />
-        <CardStyleControls cornerRadius={cornerRadius} onChange={onCornerRadiusChange} />
+        {showCornerRadius && (
+          <CardStyleControls cornerRadius={cornerRadius} onChange={onCornerRadiusChange} />
+        )}
         {slots.map(({ id, band }) => (
           <PlacementControls
             key={id}

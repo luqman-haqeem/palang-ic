@@ -1,4 +1,11 @@
-import { copyLayout, defaultPlacement, kindSlots, layoutSlot, type SlotId, slotKind } from "@/domain/copyLayout";
+import {
+  copyLayout,
+  defaultPlacement,
+  kindSlots,
+  layoutSlot,
+  type SlotId,
+  slotKind,
+} from "@/domain/copyLayout";
 import type { Crop } from "@/domain/crop";
 import { cardCornerRadius, RADIUS_MAX, RADIUS_MIN } from "@/domain/page";
 import {

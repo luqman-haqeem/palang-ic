@@ -5,7 +5,7 @@ import { exportFilename } from "@/domain/filename";
 import type { CardFace } from "@/domain/page";
 import { buildPdfBlob } from "@/export/buildPdf";
 import { downloadBlob, downloadDataUrl, renderToDataUrl } from "@/export/renderToDataUrl";
-import { copyLayout, type SlotId } from "@/domain/copyLayout";
+import { copyLayout, kindSlots, type SlotId } from "@/domain/copyLayout";
 import { needsCrop } from "@/domain/crop";
 import { canExport, initialState, reducer } from "@/state/session";
 import { forgetLine, loadLines, rememberLine } from "@/state/savedLines";
@@ -14,9 +14,9 @@ import { AdvancedSettings } from "@/ui/AdvancedSettings";
 import { CropEditor } from "@/ui/CropEditor";
 import { Dropzone } from "@/ui/Dropzone";
 import { ExportBar } from "@/ui/ExportBar";
+import { KindToggle } from "@/ui/KindToggle";
 import { PalangTextField } from "@/ui/PalangTextField";
 
-const FACES: CardFace[] = ["front", "back"];
 const today = () => isoToday(new Date());
 
 export default function App() {
@@ -90,7 +90,8 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, [selected, cropping, state.placements]);
 
-  const loadedFaces = FACES.filter((face) => state.scans[face]);
+  const slots = kindSlots(state.kind);
+  const loaded = slots.filter((slot) => state.scans[slot]);
   const layout = copyLayout(state);
 
   return (
@@ -114,7 +115,7 @@ export default function App() {
           layout={layout}
           selected={selected}
           onSelect={setSelected}
-          onDragEnd={(face, patch) => dispatch({ type: "setPlacement", slot: face, patch })}
+          onDragEnd={(slot, patch) => dispatch({ type: "setPlacement", slot, patch })}
           stageRef={stageRef}
         />
       </section>
@@ -127,6 +128,14 @@ export default function App() {
           </p>
         </div>
 
+        <KindToggle
+          kind={state.kind}
+          onChange={(kind) => {
+            setSelected(null);
+            dispatch({ type: "setKind", kind });
+          }}
+        />
+
         {error && (
           <p role="alert" className="rounded bg-red-50 px-2 py-1 text-sm text-red-800">
             {error}
@@ -134,19 +143,21 @@ export default function App() {
         )}
 
         <div className="space-y-3">
-          {FACES.map((face) => (
+          {slots.map((slot) => (
             <Dropzone
-              key={face}
-              face={face}
-              scan={state.scans[face]}
+              key={slot}
+              slot={slot}
+              scan={state.scans[slot]}
               onLoad={(scan) => {
                 setError(null);
-                dispatch({ type: "setScan", slot: face, scan });
+                dispatch({ type: "setScan", slot, scan });
                 // Kept uncropped if the user cancels: nothing they chose is discarded.
-                if (needsCrop(scan.width, scan.height)) setCropping(face);
+                if (slot !== "page" && needsCrop(scan.width, scan.height)) setCropping(slot);
               }}
-              onEdit={() => setCropping(face)}
-              onRemove={() => dispatch({ type: "removeScan", slot: face })}
+              // The crop editor frames a card; a Page is shown whole until
+              // it has a Crop of its own.
+              onEdit={slot === "page" ? undefined : () => setCropping(slot)}
+              onRemove={() => dispatch({ type: "removeScan", slot })}
               onError={setError}
             />
           ))}
@@ -159,24 +170,27 @@ export default function App() {
           onForget={(line) => setSaved(forgetLine(line))}
         />
 
-        {loadedFaces.length > 0 && (
+        {loaded.length > 0 && (
           <AdvancedSettings
             slots={layout.slots.filter((slot) => state.scans[slot.id])}
+            showCornerRadius={state.kind === "mykad"}
             style={state.style}
             placements={state.placements}
             cornerRadius={state.cornerRadius}
             onStyleChange={(patch) => dispatch({ type: "setStyle", patch })}
             onCornerRadiusChange={(radius) => dispatch({ type: "setCornerRadius", radius })}
-            onPlacementChange={(face, patch) => dispatch({ type: "setPlacement", slot: face, patch })}
-            onPlacementReset={(face) => dispatch({ type: "resetPlacement", slot: face })}
+            onPlacementChange={(slot, patch) => dispatch({ type: "setPlacement", slot, patch })}
+            onPlacementReset={(slot) => dispatch({ type: "resetPlacement", slot })}
           />
         )}
 
         <ExportBar
           disabled={!canExport(state)}
           disabledReason={
-            loadedFaces.length === 0
-              ? "Add at least one scan."
+            loaded.length === 0
+              ? state.kind === "page"
+                ? "Add a scan of the page."
+                : "Add at least one scan."
               : "Write the palang text — an empty band grants no limit on use."
           }
           onExportPng={() => exportCopy("png")}
