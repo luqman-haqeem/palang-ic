@@ -1,4 +1,4 @@
-import type { Scan } from "@/state/session";
+import type { DocumentKind, Scan } from "@/state/session";
 
 export const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 export const MAX_EDGE = 4096;
@@ -32,12 +32,21 @@ export function downscaleTarget(
   };
 }
 
-export async function loadScan(file: File): Promise<Scan> {
+/** A Page must keep A4's long edge at 300dpi (297mm ≈ 3508px) so small print
+ *  stays legible. MAX_EDGE already clears that, and a phone photo of a Page is
+ *  cropped too, so the Page keeps the same headroom rather than a tighter cap. */
+const MAX_EDGE_BY_KIND: Record<DocumentKind, number> = { mykad: MAX_EDGE, page: MAX_EDGE };
+
+export function maxEdgeFor(kind: DocumentKind): number {
+  return MAX_EDGE_BY_KIND[kind];
+}
+
+export async function loadScan(file: File, kind: DocumentKind): Promise<Scan> {
   const check = validateFile(file);
   if (!check.ok) throw new Error(check.message);
 
   const source = await createImageBitmap(file);
-  const target = downscaleTarget(source.width, source.height);
+  const target = downscaleTarget(source.width, source.height, maxEdgeFor(kind));
 
   if (target.width === source.width && target.height === source.height) {
     return { width: source.width, height: source.height, bitmap: source };
