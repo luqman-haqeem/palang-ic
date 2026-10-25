@@ -10,6 +10,7 @@ import {
   OPACITY_MAX,
   OPACITY_MIN,
 } from "@/domain/palang";
+import type { DocumentKind } from "@/state/session";
 
 /** Black is the default; the others are the colours people reach for when they
  *  want the mark to be obviously not part of the original document. */
@@ -19,13 +20,17 @@ const INK_PRESETS = [
   { label: "Navy", value: "#1e3a8a" },
 ];
 
+/** Band length is a fraction of the document's width, so name the document. */
+const LENGTH_OF: Record<DocumentKind, string> = { mykad: "card width", page: "page width" };
+
 type Props = {
+  kind: DocumentKind;
   style: BandStyle;
   onChange: (patch: Partial<BandStyle>) => void;
 };
 
 /** One angle and one size for both faces: it is one palang, drawn by one hand. */
-export function BandStyleControls({ style, onChange }: Props) {
+export function BandStyleControls({ kind, style, onChange }: Props) {
   return (
     <fieldset className="rounded border border-neutral-200 p-3">
       <legend className="px-1 text-sm font-medium">Band</legend>
@@ -44,7 +49,7 @@ export function BandStyleControls({ style, onChange }: Props) {
       </label>
 
       <label className="block text-xs">
-        Length: {Math.round(style.lengthFactor * 100)}% of card width
+        Length: {Math.round(style.lengthFactor * 100)}% of {LENGTH_OF[kind]}
         <input
           type="range"
           min={LENGTH_MIN}
