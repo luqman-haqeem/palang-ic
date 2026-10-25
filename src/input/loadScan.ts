@@ -1,4 +1,4 @@
-import type { Scan } from "@/state/document";
+import type { Scan } from "@/state/session";
 
 export const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 export const MAX_EDGE = 4096;

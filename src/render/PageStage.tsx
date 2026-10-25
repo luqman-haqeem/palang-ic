@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type Konva from "konva";
 import { Layer, Rect, Stage } from "react-konva";
 import { PAGE, type CardFace } from "@/domain/page";
-import type { SessionState } from "@/state/document";
+import type { SessionState } from "@/state/session";
 import { CardSlot } from "@/render/CardSlot";
 import { PalangBand } from "@/render/PalangBand";
 

@@ -12,7 +12,7 @@ import {
   zoomCropArea,
 } from "@/domain/crop";
 import { type CardFace, cardSize, type Rect } from "@/domain/page";
-import type { Scan } from "@/state/document";
+import type { Scan } from "@/state/session";
 
 type Props = {
   face: CardFace;

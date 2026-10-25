@@ -6,7 +6,7 @@ import type { CardFace } from "@/domain/page";
 import { buildPdfBlob } from "@/export/buildPdf";
 import { downloadBlob, downloadDataUrl, renderToDataUrl } from "@/export/renderToDataUrl";
 import { needsCrop } from "@/domain/crop";
-import { canExport, initialState, reducer } from "@/state/document";
+import { canExport, initialState, reducer } from "@/state/session";
 import { forgetLine, loadLines, rememberLine } from "@/state/savedLines";
 import { PageStage } from "@/render/PageStage";
 import { AdvancedSettings } from "@/ui/AdvancedSettings";

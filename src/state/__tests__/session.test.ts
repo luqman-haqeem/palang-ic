@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { cardRect } from "@/domain/page";
 import { DEFAULT_BAND_STYLE, defaultPlacement, DEFAULT_PALANG_TEXT } from "@/domain/palang";
-import { canExport, initialState, reducer, type Scan } from "@/state/document";
+import { canExport, initialState, reducer, type Scan } from "@/state/session";
 import { SAVED_LINES_KEY } from "@/state/savedLines";
 
 const TODAY = "2026-10-01";

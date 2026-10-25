@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import type { CardFace } from "@/domain/page";
 import { loadScan } from "@/input/loadScan";
-import type { Scan } from "@/state/document";
+import type { Scan } from "@/state/session";
 
 type Props = {
   face: CardFace;

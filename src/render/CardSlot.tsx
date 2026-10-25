@@ -8,7 +8,7 @@ import {
   type Rect,
 } from "@/domain/page";
 import { cardImageGeometry } from "@/domain/crop";
-import type { Scan } from "@/state/document";
+import type { Scan } from "@/state/session";
 
 /** Rounded-rect path, used as a clip so a scan's square corners do not read as
  *  a screenshot. `arcTo` rather than `roundRect` for older Safari. */

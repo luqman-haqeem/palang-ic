@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_PALANG_TEXT } from "@/domain/palang";
-import { canExport, initialState, reducer, type Scan } from "@/state/document";
+import { canExport, initialState, reducer, type Scan } from "@/state/session";
 
 const TODAY = "2026-10-01";
 const fakeScan = (): Scan => ({ width: 856, height: 540, bitmap: {} as ImageBitmap });
