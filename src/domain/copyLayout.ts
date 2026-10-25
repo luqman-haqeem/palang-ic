@@ -83,8 +83,22 @@ export function layoutSlot(layout: CopyLayout, id: SlotId): SlotLayout {
 const BAND_X_FRACTION = 0.105;
 const BAND_Y_FRACTION = 0.196;
 
-export function defaultPlacement(id: SlotId): PalangPlacement {
-  if (id === "page") return { cx: 0, cy: 0 };
+/** A Page's default is a fraction of the document box instead, since nothing
+ *  is known about what is printed on it: near the top-left corner, where a
+ *  letterhead or margin is likelier than the fields that matter. Unclamped;
+ *  the Copy layout pulls it onto the sheet. */
+const PAGE_BAND_X_FRACTION = 0.16;
+const PAGE_BAND_Y_FRACTION = 0.1;
+
+/** `scan` is the Page's, and is ignored for a Card face. */
+export function defaultPlacement(id: SlotId, scan?: Scan): PalangPlacement {
+  if (id === "page") {
+    const { box } = pageFrame(scan);
+    return {
+      cx: box.x + box.width * PAGE_BAND_X_FRACTION,
+      cy: box.y + box.height * PAGE_BAND_Y_FRACTION,
+    };
+  }
   const rect = cardRect(id);
   return {
     cx: rect.x + Math.round(rect.width * BAND_X_FRACTION),
@@ -157,20 +171,23 @@ function placeScan(scan: Scan | undefined, slot: Rect): { box: Rect; image: Imag
  *  and with no margin, since the Page is the paper. The sheet turns landscape
  *  when the Page does, so a landscape Page is not shrunk onto a portrait one. */
 function pageLayout(session: SessionState): CopyLayout {
-  const scan = session.scans.page;
-  const shape = scan ? pageShape(scan) : null;
-  const landscape = shape !== null && shape.width > shape.height;
-  const sheet = landscape
-    ? { width: PAGE.heightPx, height: PAGE.widthPx }
-    : { width: PAGE.widthPx, height: PAGE.heightPx };
-  const slot: Rect = { x: 0, y: 0, ...sheet };
-  const { box, image } = placeScan(scan, slot);
+  const { sheet, slot, box, image } = pageFrame(session.scans.page);
   return {
     sheet,
     slots: [
       { id: "page", slot, box, cornerRadius: 0, image, band: pageBand(session, sheet, box) },
     ],
   };
+}
+
+function pageFrame(scan: Scan | undefined) {
+  const shape = scan ? pageShape(scan) : null;
+  const landscape = shape !== null && shape.width > shape.height;
+  const sheet = landscape
+    ? { width: PAGE.heightPx, height: PAGE.widthPx }
+    : { width: PAGE.widthPx, height: PAGE.heightPx };
+  const slot: Rect = { x: 0, y: 0, ...sheet };
+  return { sheet, slot, ...placeScan(scan, slot) };
 }
 
 /** The Page as it will be drawn: its Crop's area once framed, else the whole

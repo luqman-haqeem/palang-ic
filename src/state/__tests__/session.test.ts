@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { cardRect } from "@/domain/page";
-import { defaultPlacement } from "@/domain/copyLayout";
+import { copyLayout, defaultPlacement, layoutSlot } from "@/domain/copyLayout";
 import { DEFAULT_BAND_STYLE, DEFAULT_PALANG_TEXT } from "@/domain/palang";
 import { canExport, initialState, reducer, type Scan } from "@/state/session";
 import { SAVED_LINES_KEY } from "@/state/savedLines";
@@ -236,6 +236,78 @@ describe("document kind", () => {
     s = reducer(s, { type: "clearAll", today: TODAY });
     expect(s.scans).toEqual({});
     expect(s.kind).toBe("mykad");
+  });
+});
+
+describe("Page placement", () => {
+  // A tall Page is fitted 561.5px wide, from x 116.25, the full sheet height.
+  const tall = () => fakeScan(1000, 2000);
+  const onPage = (...actions: Parameters<typeof reducer>[1][]) =>
+    actions.reduce(reducer, reducer(initialState(TODAY), { type: "setKind", kind: "page" }));
+
+  it("starts a new Page scan near the Page's top-left corner, with no crop", () => {
+    const s = onPage(
+      { type: "setStyle", patch: { angleDeg: 0 } },
+      { type: "setScan", slot: "page", scan: tall() },
+    );
+    expect(s.placements.page.cx).toBeCloseTo(116.25 + 0.16 * 561.5, 6);
+    expect(s.placements.page.cy).toBeCloseTo(0.1 * 1123, 6);
+    expect(s.scans.page?.crop).toBeUndefined();
+  });
+
+  it("starts a new Page scan at the default even after the last one was moved", () => {
+    const s = onPage(
+      { type: "setStyle", patch: { angleDeg: 0 } },
+      { type: "setScan", slot: "page", scan: tall() },
+      { type: "setPlacement", slot: "page", patch: { cx: 400, cy: 600 } },
+      { type: "setScan", slot: "page", scan: tall() },
+    );
+    expect(s.placements.page.cx).toBeCloseTo(206.09, 6);
+  });
+
+  it("stores the default exactly where the band is drawn, pulled onto the sheet", () => {
+    const s = onPage({ type: "setScan", slot: "page", scan: tall() });
+    const { band } = layoutSlot(copyLayout(s), "page");
+    expect(s.placements.page).toEqual({ cx: band.cx, cy: band.cy });
+  });
+
+  it("resets to the default for the current Page", () => {
+    const s = onPage(
+      { type: "setStyle", patch: { angleDeg: 0 } },
+      { type: "setScan", slot: "page", scan: tall() },
+      { type: "setPlacement", slot: "page", patch: { cx: 400, cy: 600 } },
+      { type: "resetPlacement", slot: "page" },
+    );
+    expect(s.placements.page.cx).toBeCloseTo(206.09, 6);
+    expect(s.placements.page.cy).toBeCloseTo(112.3, 6);
+  });
+
+  it("stops a dragged band at the sheet edge, as drawn", () => {
+    const s = onPage(
+      { type: "setScan", slot: "page", scan: tall() },
+      { type: "setPlacement", slot: "page", patch: { cx: 9999, cy: -9999 } },
+    );
+    const { band } = layoutSlot(copyLayout(s), "page");
+    expect(s.placements.page).toEqual({ cx: band.cx, cy: band.cy });
+    expect(band.cx).toBeLessThan(794);
+    expect(band.cy).toBeGreaterThan(0);
+  });
+
+  it("follows the band when a longer Band style pushes it back on the sheet", () => {
+    const s = onPage(
+      { type: "setStyle", patch: { angleDeg: 0 } },
+      { type: "setScan", slot: "page", scan: tall() },
+      { type: "setPlacement", slot: "page", patch: { cx: 9999 } },
+      { type: "setStyle", patch: { lengthFactor: 1.2 } },
+    );
+    const { band } = layoutSlot(copyLayout(s), "page");
+    expect(s.placements.page).toEqual({ cx: band.cx, cy: band.cy });
+  });
+
+  it("leaves the MyKad placements alone", () => {
+    const s = onPage({ type: "setScan", slot: "page", scan: tall() });
+    expect(s.placements.front).toEqual(defaultPlacement("front"));
+    expect(s.placements.back).toEqual(defaultPlacement("back"));
   });
 });
 

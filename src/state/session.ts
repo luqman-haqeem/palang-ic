@@ -58,7 +58,7 @@ export type Action =
   | { type: "clearAll"; today: string };
 
 export function initialState(today: string): SessionState {
-  return {
+  const state: SessionState = {
     kind: "mykad",
     scans: {},
     line: DEFAULT_PALANG_TEXT,
@@ -71,17 +71,35 @@ export function initialState(today: string): SessionState {
     style: { ...DEFAULT_BAND_STYLE },
     cornerRadius: cardCornerRadius(),
   };
+  return settle(state, "page", state.placements.page);
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
+
+/** Stores a slot's centre exactly where the Copy layout draws it, so state and
+ *  preview cannot disagree about where the band is. Laid out as the slot's own
+ *  kind, which need not be the active one. */
+function settle(state: SessionState, slot: SlotId, centre: PalangPlacement): SessionState {
+  const placements = { ...state.placements, [slot]: centre };
+  const { cx, cy } = layoutSlot(
+    copyLayout({ ...state, kind: slotKind(slot), placements }),
+    slot,
+  ).band;
+  return { ...state, placements: { ...placements, [slot]: { cx, cy } } };
+}
 
 export function reducer(state: SessionState, action: Action): SessionState {
   switch (action.type) {
     case "setKind":
       return { ...state, kind: action.kind };
 
-    case "setScan":
-      return { ...state, scans: { ...state.scans, [action.slot]: action.scan } };
+    case "setScan": {
+      const next = { ...state, scans: { ...state.scans, [action.slot]: action.scan } };
+      // A card keeps its tuned spot across scans of the same face; a new Page
+      // may be any shape, so its band starts afresh on it.
+      if (action.slot !== "page") return next;
+      return settle(next, "page", defaultPlacement("page", action.scan));
+    }
 
     case "removeScan": {
       const scans = { ...state.scans };
@@ -103,7 +121,7 @@ export function reducer(state: SessionState, action: Action): SessionState {
 
     case "setStyle": {
       const merged = { ...state.style, ...action.patch };
-      return {
+      const next = {
         ...state,
         style: {
           angleDeg: clamp(merged.angleDeg, ANGLE_MIN, ANGLE_MAX),
@@ -113,28 +131,19 @@ export function reducer(state: SessionState, action: Action): SessionState {
           opacity: clamp(merged.opacity, OPACITY_MIN, OPACITY_MAX),
         },
       };
+      // A Page band's limits depend on its angle and size, so a style change
+      // can move it back onto the sheet. A card's limits are its card alone.
+      return settle(next, "page", next.placements.page);
     }
 
     case "setCornerRadius":
       return { ...state, cornerRadius: clamp(action.radius, RADIUS_MIN, RADIUS_MAX) };
 
-    case "setPlacement": {
-      const merged = { ...state.placements[action.slot], ...action.patch };
-      const placements = { ...state.placements, [action.slot]: merged };
-      // Stored exactly where the Copy layout draws it, so state and preview
-      // cannot disagree about where the band is.
-      const { cx, cy } = layoutSlot(
-        copyLayout({ ...state, kind: slotKind(action.slot), placements }),
-        action.slot,
-      ).band;
-      return { ...state, placements: { ...placements, [action.slot]: { cx, cy } } };
-    }
+    case "setPlacement":
+      return settle(state, action.slot, { ...state.placements[action.slot], ...action.patch });
 
     case "resetPlacement":
-      return {
-        ...state,
-        placements: { ...state.placements, [action.slot]: defaultPlacement(action.slot) },
-      };
+      return settle(state, action.slot, defaultPlacement(action.slot, state.scans.page));
 
     case "clearAll":
       return initialState(action.today);
