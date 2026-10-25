@@ -1,8 +1,9 @@
 # palang-ic
 
-A browser-local tool that adds a **palang** to copies of a Malaysian MyKad:
-two parallel lines with a restrictive sentence between them, composed onto one
-A4 page and exported as PNG or PDF.
+A browser-local tool that adds a **palang** to copies of a Malaysian MyKad, or
+of any other single-sided document such as a surat beranak or a sijil SPM: two
+parallel lines with a restrictive sentence between them, composed onto one A4
+page and exported as PNG or PDF.
 
 Built for my own use, because the service I was using gates exports behind paid
 tokens for something that is ultimately a canvas and a download.
@@ -15,8 +16,8 @@ npm install && npm run dev
 
 ## What a palang is, and what it isn't
 
-When you hand a photocopy of your IC to a bank, a telco or a landlord, the
-convention in Malaysia is to strike it with a *palang* — two parallel lines with
+When you hand a photocopy of your IC, birth certificate or certificate to a
+bank, a telco, an employer or a landlord, the convention in Malaysia is to strike it with a *palang* — two parallel lines with
 the permitted purpose written between them, so the copy cannot be reused for
 anything else.
 
@@ -39,13 +40,17 @@ sentences. Cloudflare serves the bundle and never sees a scan.
 
 ## Use
 
-Scan both sides of the card as JPEG, PNG or WebP and drop them in. Type the
+Pick what you are copying. **MyKad**: scan both sides of the card as JPEG, PNG
+or WebP and drop them in. **Page**: drop in one scan of any single-sided paper
+document; it fills the A4 sheet edge to edge, and the sheet turns landscape
+when the page does. The band always stays whole on the sheet, and shortens if
+it would not fit at its angle. A two-sided paper is two Copies. Type the
 purpose — one free-text field, deliberately not a template, because every bank
 and employer wants a different wording. Drag a band to position it, or click it
 and nudge with the arrow keys (shift for 10px). Export as PNG or PDF.
 
-Everything else — angle, length, text size, ink colour, opacity, corner radius
-and per-face position — lives under **Advanced settings** as sliders.
+Everything else — angle, length, text size, ink colour, opacity, the card's
+corner radius and each band's position — lives under **Advanced settings** as sliders.
 
 ## Stack
 
