@@ -23,8 +23,6 @@ type Props = {
   /** The box's corner rounding in sheet px, previewed on the frame. */
   radius: number;
   onApply: (crop: Crop) => void;
-  /** Given, Reset hands back to it instead of reframing in the editor. */
-  onReset?: () => void;
   onCancel: () => void;
 };
 
@@ -43,7 +41,7 @@ type Point = { x: number; y: number };
  *  moved and pinch-zoomed beneath it. Every rule — the frame's shape, the photo
  *  always covering it, the zoom limit, rotation — lives in domain/crop; this
  *  only turns gestures into calls. */
-export function CropEditor({ slot, scan, radius, onApply, onReset, onCancel }: Props) {
+export function CropEditor({ slot, scan, radius, onApply, onCancel }: Props) {
   const target: CropTarget = slotKind(slot) === "page" ? "page" : "card";
   const [crop, setCrop] = useState<Crop>(
     () => scan.crop ?? initialCrop(scan.width, scan.height, target),
@@ -119,8 +117,10 @@ export function CropEditor({ slot, scan, radius, onApply, onReset, onCancel }: P
     setCrop((c) => rotateCrop(c, step, scan.width, scan.height, target));
   }
 
+  /** Reframes in the editor, for a card and a Page alike: it undoes the
+   *  framing, keeping the turn and the frame's orientation, and nothing is
+   *  applied until the user says so. */
   function reset() {
-    if (onReset) return onReset();
     changeArea((c, turned) =>
       defaultCropArea(turned.width, turned.height, target, c.orientation),
     );

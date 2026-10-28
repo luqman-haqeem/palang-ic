@@ -105,16 +105,6 @@ export default function App() {
             dispatch({ type: "setCrop", slot: cropping, crop });
             setCropping(null);
           }}
-          // A Page has a whole, uncropped form to go back to; a card's Reset
-          // reframes it in the editor instead.
-          onReset={
-            cropping === "page"
-              ? () => {
-                  dispatch({ type: "resetCrop", slot: "page" });
-                  setCropping(null);
-                }
-              : undefined
-          }
           onCancel={() => setCropping(null)}
         />
       )}
