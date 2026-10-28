@@ -300,12 +300,21 @@ describe("document kind", () => {
     expect(s.placements.page).toEqual({ cx: 400, cy: 500 });
   });
 
-  it("is emptied of both kinds' scans by Clear all, back to a MyKad", () => {
+  it("is emptied of both kinds' scans and placements by Clear all, staying on the Page", () => {
     let s = reducer(initialState(TODAY), { type: "setScan", slot: "front", scan: fakeScan() });
+    s = reducer(s, { type: "setPlacement", slot: "front", patch: { cx: 300 } });
     s = reducer(s, { type: "setKind", kind: "page" });
     s = reducer(s, { type: "setScan", slot: "page", scan: fakeScan(2480, 3508) });
+    s = reducer(s, { type: "setPlacement", slot: "page", patch: { cx: 400, cy: 500 } });
     s = reducer(s, { type: "clearAll", today: TODAY });
     expect(s.scans).toEqual({});
+    expect(s.kind).toBe("page");
+    expect(s.placements).toEqual(initialState(TODAY).placements);
+  });
+
+  it("stays on a MyKad after Clear all on a MyKad", () => {
+    let s = reducer(initialState(TODAY), { type: "setScan", slot: "front", scan: fakeScan() });
+    s = reducer(s, { type: "clearAll", today: TODAY });
     expect(s.kind).toBe("mykad");
   });
 });

@@ -161,8 +161,10 @@ export function reducer(state: SessionState, action: Action): SessionState {
     case "resetPlacement":
       return settle(state, action.slot, defaultPlacement(action.slot, state.scans.page));
 
+    // Clears the work, not the choice: the user is still copying the same kind
+    // of Document, so the next Scan lands where they expect.
     case "clearAll":
-      return initialState(action.today);
+      return { ...initialState(action.today), kind: state.kind };
   }
 }
 
