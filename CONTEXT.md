@@ -17,7 +17,7 @@ birth and photograph. Any change that starts covering those fields has stopped
 building a palang.
 
 A palang is never cut by the edge of the Copy. It may run off a card onto the
-page around it, but never off the page.
+sheet around it, but never off the sheet.
 
 The term `watermark` is retired from this project, including in identifiers.
 
@@ -45,8 +45,10 @@ into it, so it can be re-edited or reset and the original is never lost. A new
 Scan for the same face or Page starts without one.
 
 A Crop always has its Document's shape: the card's shape on a MyKad, A4
-proportions on a Page, portrait or landscape as the Page turns. Straightening a
-tilted photo is not part of it: a Crop only turns in quarter turns.
+proportions on a Page. On a Page the Crop also has its own orientation,
+portrait or landscape, chosen by the user and independent of its quarter
+turns: turning the Scan never turns the Crop. Straightening a tilted photo is
+not part of it: a Crop only turns in quarter turns.
 
 ## Card face
 
@@ -55,13 +57,19 @@ different positions, so each is annotated independently.
 
 ## Copy
 
-The single exported artifact: one A4 sheet bearing one Document, palanged. The
+The single exported artifact: one Sheet bearing one Document, palanged. The
 unit the user sends to a recipient. A Copy never mixes Documents.
 
-For a MyKad, the Copy is a portrait sheet bearing both Card faces, produced from
-one or two Scans. For a Page, the Page fills the sheet, and the sheet turns
-landscape when the Page does; a second page of the same paper is a second
+For a MyKad, the Copy is a portrait Sheet bearing both Card faces, produced from
+one or two Scans. For a Page, the Page fills the Sheet, and the Sheet takes
+the Page's orientation, its Crop's once it has one; a second page of the same paper is a second
 Copy.
+
+## Sheet
+
+The A4 sheet a Copy is printed on, portrait or landscape. Not the same as a
+Page: a Page is a Document kind, the paper being copied; the Sheet is what the
+Copy is printed on.
 
 ## Palang text
 
