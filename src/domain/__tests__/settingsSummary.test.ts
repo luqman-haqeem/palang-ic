@@ -18,7 +18,7 @@ describe("formatSettingsSummary", () => {
     );
   });
 
-  it("rounds positions to whole pixels, since placement is stored in page px", () => {
+  it("rounds positions to whole pixels, since placement is stored in sheet px", () => {
     const dragged = { front: { cx: 306.7, cy: 155.2 }, back: { cx: 300.4, cy: 415.6 } };
     expect(formatSettingsSummary(style, dragged, 12)).toContain("front 307,155");
     expect(formatSettingsSummary(style, dragged, 12)).toContain("back 300,416");

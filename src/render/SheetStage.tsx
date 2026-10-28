@@ -3,7 +3,7 @@ import type Konva from "konva";
 import { Layer, Rect, Stage } from "react-konva";
 import type { CopyLayout, SlotId } from "@/domain/copyLayout";
 import type { SessionState } from "@/state/session";
-import { CardSlot } from "@/render/CardSlot";
+import { DocumentImage } from "@/render/DocumentImage";
 import { PalangBand } from "@/render/PalangBand";
 
 type Props = {
@@ -16,7 +16,7 @@ type Props = {
   stageRef: React.RefObject<Konva.Stage | null>;
 };
 
-export function PageStage({
+export function SheetStage({
   state,
   layout,
   selected,
@@ -54,7 +54,7 @@ export function PageStage({
         <Layer>
           <Rect x={0} y={0} width={sheet.width} height={sheet.height} fill="#ffffff" />
           {layout.slots.map((slot) => (
-            <CardSlot key={slot.id} layout={slot} scan={state.scans[slot.id]} />
+            <DocumentImage key={slot.id} layout={slot} scan={state.scans[slot.id]} />
           ))}
         </Layer>
         <Layer>

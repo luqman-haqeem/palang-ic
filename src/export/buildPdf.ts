@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import { PAGE } from "@/domain/page";
+import { SHEET } from "@/domain/sheet";
 
 export type SheetOrientation = "portrait" | "landscape";
 
@@ -11,11 +11,11 @@ export function sheetOrientation(sheet: { width: number; height: number }): Shee
 
 export function buildPdfDoc(jpegDataUrl: string, orientation: SheetOrientation = "portrait"): jsPDF {
   if (!jpegDataUrl.startsWith("data:image/jpeg")) {
-    throw new Error("The page could not be rendered as a JPEG for the PDF.");
+    throw new Error("The sheet could not be rendered as a JPEG for the PDF.");
   }
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation });
   const [width, height] =
-    orientation === "landscape" ? [PAGE.heightMm, PAGE.widthMm] : [PAGE.widthMm, PAGE.heightMm];
+    orientation === "landscape" ? [SHEET.heightMm, SHEET.widthMm] : [SHEET.widthMm, SHEET.heightMm];
   doc.addImage(jpegDataUrl, "JPEG", 0, 0, width, height);
   return doc;
 }

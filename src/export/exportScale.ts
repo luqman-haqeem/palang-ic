@@ -1,9 +1,9 @@
-import { PAGE } from "@/domain/page";
+import { SHEET } from "@/domain/sheet";
 
-/** 300dpi over the 96dpi logical page. */
+/** 300dpi over the 96dpi sheet px. */
 export const BASE_PIXEL_RATIO = 300 / 96;
 
-const PORTRAIT_SHEET = { width: PAGE.widthPx, height: PAGE.heightPx };
+const PORTRAIT_SHEET = { width: SHEET.widthPx, height: SHEET.heightPx };
 
 /** Konva sizes the export canvas from `stage.width()`, and the preview stage is
  *  sized `sheet.width * scale` so it fits the viewport. Dividing the ratio by
@@ -17,7 +17,7 @@ export function exportPixelRatio(stageScale: number): number {
   return BASE_PIXEL_RATIO / scale;
 }
 
-/** The exported Copy's size for a sheet in logical px: portrait A4 by default,
+/** The exported Copy's size for a sheet in sheet px: portrait A4 by default,
  *  or the landscape sheet a landscape Page lays out on. */
 export function exportedPixelSize(
   stageScale: number,

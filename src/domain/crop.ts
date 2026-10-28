@@ -5,7 +5,7 @@ import {
   type Rect,
   type Size,
   sheetSize,
-} from "@/domain/page";
+} from "@/domain/sheet";
 import { BASE_PIXEL_RATIO } from "@/export/exportScale";
 
 /** Quarter turns clockwise. A card photographed in portrait is lying on its

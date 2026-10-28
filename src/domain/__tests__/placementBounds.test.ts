@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { copyLayout, layoutSlot } from "@/domain/copyLayout";
-import { cardRect } from "@/domain/page";
+import { cardRect } from "@/domain/sheet";
 import { initialState } from "@/state/session";
 
 const placementBounds = (face: "front" | "back") =>

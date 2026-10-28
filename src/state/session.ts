@@ -9,7 +9,7 @@ import {
 } from "@/domain/copyLayout";
 import type { Crop } from "@/domain/crop";
 import type { DocumentKind, Scan } from "@/domain/document";
-import { cardCornerRadius, RADIUS_MAX, RADIUS_MIN } from "@/domain/page";
+import { cardCornerRadius, RADIUS_MAX, RADIUS_MIN } from "@/domain/sheet";
 import {
   ANGLE_MAX,
   ANGLE_MIN,

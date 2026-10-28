@@ -8,7 +8,7 @@ import { copyLayout, kindSlots, type SlotId } from "@/domain/copyLayout";
 import { needsCrop } from "@/domain/crop";
 import { canExport, initialState, reducer } from "@/state/session";
 import { forgetLine, loadLines, rememberLine } from "@/state/savedLines";
-import { PageStage } from "@/render/PageStage";
+import { SheetStage } from "@/render/SheetStage";
 import { AdvancedSettings } from "@/ui/AdvancedSettings";
 import { CropEditor } from "@/ui/CropEditor";
 import { Dropzone } from "@/ui/Dropzone";
@@ -109,7 +109,7 @@ export default function App() {
         />
       )}
       <section className="flex-1">
-        <PageStage
+        <SheetStage
           state={state}
           layout={layout}
           selected={selected}

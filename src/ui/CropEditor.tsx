@@ -14,7 +14,7 @@ import {
   setCropOrientation,
   zoomCropArea,
 } from "@/domain/crop";
-import type { Orientation, Rect } from "@/domain/page";
+import type { Orientation, Rect } from "@/domain/sheet";
 import type { Scan } from "@/domain/document";
 
 type Props = {

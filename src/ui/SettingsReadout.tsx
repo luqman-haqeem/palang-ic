@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { CardFace } from "@/domain/page";
+import type { CardFace } from "@/domain/sheet";
 import type { BandStyle, PalangPlacement } from "@/domain/palang";
 import { formatSettingsSummary } from "@/domain/settingsSummary";
 

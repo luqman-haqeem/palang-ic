@@ -1,4 +1,4 @@
-import { cardCornerRadius, RADIUS_MAX, RADIUS_MIN } from "@/domain/page";
+import { cardCornerRadius, RADIUS_MAX, RADIUS_MIN } from "@/domain/sheet";
 
 type Props = {
   cornerRadius: number;

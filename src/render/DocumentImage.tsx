@@ -1,7 +1,7 @@
 import type Konva from "konva";
 import { Group, Image as KonvaImage, Rect as KonvaRect } from "react-konva";
 import type { SlotLayout } from "@/domain/copyLayout";
-import { clampCornerRadius, type Rect } from "@/domain/page";
+import { clampCornerRadius, type Rect } from "@/domain/sheet";
 import type { Scan } from "@/domain/document";
 
 /** Rounded-rect path, used as a clip so a scan's square corners do not read as
@@ -18,11 +18,13 @@ function roundedRectPath(ctx: Konva.Context, rect: Rect, radius: number): void {
   ctx.closePath();
 }
 
-/** A thin reader of the Copy layout: every position and size comes from
- *  `layout`, and `scan` supplies only the pixels. */
 type Props = { layout: SlotLayout; scan?: Scan };
 
-export function CardSlot({ layout, scan }: Props) {
+/** One slot's Scan on the sheet — a Card face or the Page — or its dashed
+ *  outline while it has none. A thin reader of the Copy layout: every position
+ *  and size comes from `layout`, and `scan` supplies only the pixels. */
+
+export function DocumentImage({ layout, scan }: Props) {
   const { slot, box, cornerRadius, image } = layout;
 
   if (!scan || !image) {

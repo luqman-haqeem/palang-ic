@@ -1,6 +1,6 @@
 export const MM_TO_PX = 96 / 25.4;
 
-export const PAGE = { widthMm: 210, heightMm: 297, widthPx: 794, heightPx: 1123 } as const;
+export const SHEET = { widthMm: 210, heightMm: 297, widthPx: 794, heightPx: 1123 } as const;
 export const CARD = { widthMm: 85.6, heightMm: 54 } as const;
 /** ISO/IEC 7810 ID-1 corner radius — the same standard that fixes the card at
  *  85.6 x 54mm. A MyKad has rounded corners, so square-cornered scans read as
@@ -38,10 +38,10 @@ export function oriented(portrait: Size, orientation: Orientation): Size {
 
 /** The A4 sheet in px, either way up. */
 export function sheetSize(orientation: Orientation): Size {
-  return oriented({ width: PAGE.widthPx, height: PAGE.heightPx }, orientation);
+  return oriented({ width: SHEET.widthPx, height: SHEET.heightPx }, orientation);
 }
 
-/** Nearest whole pixel. Rounding, not truncation: 15mm is 56.69px and the page
+/** Nearest whole pixel. Rounding, not truncation: 15mm is 56.69px and the sheet
  *  layout depends on that being 57. */
 export function mmToPx(mm: number): number {
   return Math.round(mm * MM_TO_PX);
@@ -69,7 +69,7 @@ export function clampCornerRadius(radius: number, width: number, height: number)
 
 export function cardRect(face: CardFace): Rect {
   const { width, height } = cardSize();
-  const x = Math.floor((PAGE.widthPx - width) / 2);
+  const x = Math.floor((SHEET.widthPx - width) / 2);
   const top = mmToPx(TOP_MARGIN_MM);
   const y = face === "front" ? top : top + height + mmToPx(FACE_GAP_MM);
   return { x, y, width, height };

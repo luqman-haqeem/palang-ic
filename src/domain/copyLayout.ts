@@ -6,10 +6,9 @@ import {
   containFit,
   type Orientation,
   orientationOf,
-  PAGE,
   type Rect,
   sheetSize,
-} from "@/domain/page";
+} from "@/domain/sheet";
 import { type BandStyle, bandGeometry, type PalangPlacement } from "@/domain/palang";
 import type { DocumentKind, Scan } from "@/domain/document";
 
@@ -63,7 +62,7 @@ export type SlotLayout = {
   band: BandLayout;
 };
 
-/** Everything the preview and the export draw, in sheet logical px. */
+/** Everything the preview and the export draw, in sheet px. */
 export type CopyLayout = {
   sheet: { width: number; height: number };
   /** In drawing order. */
@@ -87,7 +86,7 @@ export function slotKind(id: SlotId): DocumentKind {
 export function copyLayout(input: CopyInput): CopyLayout {
   if (input.kind === "page") return pageLayout(input);
   return {
-    sheet: { width: PAGE.widthPx, height: PAGE.heightPx },
+    sheet: sheetSize("portrait"),
     slots: FACES.map((id) => cardSlot(input, id)),
   };
 }
@@ -158,7 +157,7 @@ function cardSlot(input: CopyInput, id: CardFace): SlotLayout {
 }
 
 /** A MyKad band's centre is held to its own card, while its ends are left free
- *  so it can overhang onto the page: a palang is a stroke drawn across a copy,
+ *  so it can overhang onto the sheet: a palang is a stroke drawn across a copy,
  *  not a graphic fitted inside the card. The card sits well inside the sheet,
  *  so an overhanging band still never runs off the Copy. */
 function cardBand(input: CopyInput, id: CardFace, slot: Rect): BandLayout {
@@ -192,7 +191,8 @@ function placeScan(scan: Scan | undefined, slot: Rect): { box: Rect; image: Imag
 
 /** A Page is contain-fitted to the whole sheet, edge to edge: never cropped,
  *  and with no margin, since the Page is the paper. The sheet turns landscape
- *  when the Page does, so a landscape Page is not shrunk onto a portrait one. */
+ *  with a landscape Crop frame, or an uncropped Scan wider than tall, so a
+ *  landscape Page is not shrunk onto a portrait sheet. */
 function pageLayout(input: CopyInput): CopyLayout {
   const { sheet, slot, box, image } = pageFrame(input.scans.page);
   return {
@@ -216,7 +216,7 @@ function pageOrientation(scan: Scan | undefined): Orientation {
   return scan.crop ? scan.crop.orientation : orientationOf(scan);
 }
 
-/** Unlike a card, a Page has no page around it to overhang onto, so the whole
+/** Unlike a card, a Page has no sheet around it to overhang onto, so the whole
  *  band (both lines, both ends, the text) is held on the sheet: a palang is
  *  never cut by the edge of the Copy. Sized by document width over card width,
  *  so it keeps its MyKad proportions. */

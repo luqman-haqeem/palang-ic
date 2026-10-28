@@ -1,4 +1,4 @@
-import type { CardFace } from "@/domain/page";
+import type { CardFace } from "@/domain/sheet";
 import type { BandStyle, PalangPlacement } from "@/domain/palang";
 
 /** A one-line dump of everything that would need to change to make the current

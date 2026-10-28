@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { cardRect } from "@/domain/page";
+import { cardRect } from "@/domain/sheet";
 import { copyLayout, defaultPlacement, layoutSlot } from "@/domain/copyLayout";
 import { initialCrop } from "@/domain/crop";
 import { DEFAULT_BAND_STYLE, DEFAULT_PALANG_TEXT } from "@/domain/palang";

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { cardRect, cardSize, containFit, mmToPx, PAGE } from "@/domain/page";
+import { cardRect, cardSize, containFit, mmToPx, SHEET } from "@/domain/sheet";
 
-describe("page constants", () => {
+describe("sheet constants", () => {
   it("is A4 at 96dpi", () => {
-    expect(PAGE.widthPx).toBe(794);
-    expect(PAGE.heightPx).toBe(1123);
+    expect(SHEET.widthPx).toBe(794);
+    expect(SHEET.heightPx).toBe(1123);
   });
 
   it("converts mm to px", () => {
@@ -26,9 +26,9 @@ describe("cardRect", () => {
     expect(cardRect("back")).toEqual({ x: 235, y: 355, width: 323, height: 204 });
   });
 
-  it("keeps both faces in the upper portion of the page", () => {
+  it("keeps both faces in the upper portion of the sheet", () => {
     const back = cardRect("back");
-    expect(back.y + back.height).toBeLessThan(PAGE.heightPx);
+    expect(back.y + back.height).toBeLessThan(SHEET.heightPx);
   });
 });
 
