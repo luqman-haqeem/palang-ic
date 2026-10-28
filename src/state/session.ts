@@ -123,10 +123,12 @@ export function reducer(state: SessionState, action: Action): SessionState {
       if (action.type === "setCrop") framed.crop = action.crop;
       else delete framed.crop;
       const next = { ...state, scans: { ...state.scans, [action.slot]: framed } };
-      // A Crop changes what fills a Page's sheet, so its band starts afresh on
-      // what is now drawn. A card's box is the same either way.
+      // A Crop changes what fills a Page's sheet, so its band is pulled back
+      // onto what is now drawn — but kept where the user put it otherwise:
+      // reframing the photo says nothing about where the palang should go. A
+      // card's box is the same either way.
       if (action.slot !== "page") return next;
-      return settle(next, "page", defaultPlacement("page", framed));
+      return settle(next, "page", next.placements.page);
     }
 
     case "setLine":

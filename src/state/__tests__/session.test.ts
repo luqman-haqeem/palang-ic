@@ -170,26 +170,42 @@ describe("Page crops", () => {
     expect(s.scans.page?.width).toBe(1000);
   });
 
-  it("starts the band afresh near the cropped Page's top-left corner", () => {
+  it("keeps the band where the user put it when the Page is cropped", () => {
     const s = onPage(
       { type: "setScan", slot: "page", scan: tall() },
       { type: "setPlacement", slot: "page", patch: { cx: 400, cy: 600 } },
       { type: "setCrop", slot: "page", crop: pageCrop },
     );
-    // Where it starts on an uncropped Page that already fills the sheet.
-    const a4 = onPage({ type: "setScan", slot: "page", scan: fakeScan(794, 1123) });
-    expect(s.placements.page).toEqual(a4.placements.page);
-    expect(s.placements.page.cy).toBeCloseTo(0.1 * 1123, 6);
+    expect(s.placements.page).toEqual({ cx: 400, cy: 600 });
   });
 
-  it("restores the uncropped Page on reset, its band back on the whole Page", () => {
+  // A squarer Page is fitted 794 x 952.8 from y 85.1 uncropped, and fills the
+  // whole sheet once cropped.
+  const squarer = () => fakeScan(1000, 1200);
+  const squarerCrop = initialCrop(1000, 1200, "page");
+
+  it("pulls the band back onto the document when a Crop shrinks what is drawn", () => {
     const s = onPage(
-      { type: "setScan", slot: "page", scan: tall() },
-      { type: "setCrop", slot: "page", crop: pageCrop },
+      { type: "setScan", slot: "page", scan: squarer() },
+      { type: "setCrop", slot: "page", crop: squarerCrop },
+      { type: "setPlacement", slot: "page", patch: { cx: 400, cy: 1100 } },
       { type: "resetCrop", slot: "page" },
     );
     expect(s.scans.page?.crop).toBeUndefined();
-    expect(s.placements.page.cx).toBeCloseTo(116.25 + 0.16 * 561.5, 6);
+    // Re-clamped to the uncropped Page's bottom edge, not re-defaulted.
+    expect(s.placements.page.cx).toBe(400);
+    expect(s.placements.page.cy).toBeCloseTo(85.1 + 952.8, 6);
+  });
+
+  it("stores the re-clamped band exactly where it is drawn", () => {
+    const s = onPage(
+      { type: "setScan", slot: "page", scan: squarer() },
+      { type: "setCrop", slot: "page", crop: squarerCrop },
+      { type: "setPlacement", slot: "page", patch: { cx: 400, cy: 1100 } },
+      { type: "resetCrop", slot: "page" },
+    );
+    const { band } = layoutSlot(copyLayout(s), "page");
+    expect(s.placements.page).toEqual({ cx: band.cx, cy: band.cy });
   });
 
   it("clears the Crop when a new Page Scan arrives", () => {
