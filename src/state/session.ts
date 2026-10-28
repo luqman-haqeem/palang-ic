@@ -3,10 +3,12 @@ import {
   defaultPlacement,
   kindSlots,
   layoutSlot,
+  type CopyInput,
   type SlotId,
   slotKind,
 } from "@/domain/copyLayout";
 import type { Crop } from "@/domain/crop";
+import type { DocumentKind, Scan } from "@/domain/document";
 import { cardCornerRadius, RADIUS_MAX, RADIUS_MIN } from "@/domain/page";
 import {
   ANGLE_MAX,
@@ -25,30 +27,14 @@ import {
   type PalangPlacement,
 } from "@/domain/palang";
 
-/** `bitmap` is always the original upload; a `crop` frames it at draw time and
- *  is dropped with it, so a new image never inherits the last one's framing. */
-export type Scan = { width: number; height: number; bitmap: ImageBitmap; crop?: Crop };
-
-/** What the user is making a Copy of. Always their choice, never guessed from a
- *  Scan: a card and a landscape A4 page are too close in shape to tell apart. */
-export type DocumentKind = "mykad" | "page";
-
 /** Both kinds' Scans and Placements are held side by side, keyed by slot, so a
  *  kind switch discards nothing. Only the active kind's slots are drawn. */
-export type SessionState = {
-  kind: DocumentKind;
-  scans: Partial<Record<SlotId, Scan>>;
+export type SessionState = CopyInput & {
   /** Exactly what the user typed. The tool imposes no template and appends no
    *  date — including a date, a recipient, or neither is the user's call. */
   line: string;
   /** Used only for the export filename. */
   date: string;
-  placements: Record<SlotId, PalangPlacement>;
-  /** Shared by both kinds: one palang, one hand. */
-  style: BandStyle;
-  /** Corner rounding applied to MyKad scans, in page logical px. A Page is
-   *  always square. */
-  cornerRadius: number;
 };
 
 export type Action =

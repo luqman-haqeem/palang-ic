@@ -10,8 +10,21 @@ import {
   type Rect,
   sheetSize,
 } from "@/domain/page";
-import { bandGeometry, type PalangPlacement } from "@/domain/palang";
-import type { DocumentKind, Scan, SessionState } from "@/state/session";
+import { type BandStyle, bandGeometry, type PalangPlacement } from "@/domain/palang";
+import type { DocumentKind, Scan } from "@/domain/document";
+
+/** Everything the Copy's geometry depends on: the session less its text and
+ *  date, so the domain lays out a Copy without knowing the session's shape. */
+export type CopyInput = {
+  kind: DocumentKind;
+  scans: Partial<Record<SlotId, Scan>>;
+  placements: Record<SlotId, PalangPlacement>;
+  /** Shared by both kinds: one palang, one hand. */
+  style: BandStyle;
+  /** Corner rounding applied to MyKad scans, in sheet px. A Page is always
+   *  square. */
+  cornerRadius: number;
+};
 
 /** A box on the sheet that one Document's Scan is drawn into: a Card face on
  *  a MyKad, or the one Page. */
@@ -71,11 +84,11 @@ export function slotKind(id: SlotId): DocumentKind {
 /** The single source of the Copy's geometry. Pure, so the preview, the band's
  *  drag limits and the reducer's clamp can all read it and never disagree.
  *  Lays out the active kind only. */
-export function copyLayout(session: SessionState): CopyLayout {
-  if (session.kind === "page") return pageLayout(session);
+export function copyLayout(input: CopyInput): CopyLayout {
+  if (input.kind === "page") return pageLayout(input);
   return {
     sheet: { width: PAGE.widthPx, height: PAGE.heightPx },
-    slots: FACES.map((id) => cardSlot(session, id)),
+    slots: FACES.map((id) => cardSlot(input, id)),
   };
 }
 
@@ -131,16 +144,16 @@ export function clampCentre(
   };
 }
 
-function cardSlot(session: SessionState, id: CardFace): SlotLayout {
+function cardSlot(input: CopyInput, id: CardFace): SlotLayout {
   const slot = cardRect(id);
-  const { box, image } = placeScan(session.scans[id], slot);
+  const { box, image } = placeScan(input.scans[id], slot);
   return {
     id,
     slot,
     box,
-    cornerRadius: session.cornerRadius,
+    cornerRadius: input.cornerRadius,
     image,
-    band: cardBand(session, id, slot),
+    band: cardBand(input, id, slot),
   };
 }
 
@@ -148,8 +161,8 @@ function cardSlot(session: SessionState, id: CardFace): SlotLayout {
  *  so it can overhang onto the page: a palang is a stroke drawn across a copy,
  *  not a graphic fitted inside the card. The card sits well inside the sheet,
  *  so an overhanging band still never runs off the Copy. */
-function cardBand(session: SessionState, id: CardFace, slot: Rect): BandLayout {
-  const { fontSize, lengthFactor } = session.style;
+function cardBand(input: CopyInput, id: CardFace, slot: Rect): BandLayout {
+  const { fontSize, lengthFactor } = input.style;
   const bounds: CentreBounds = {
     minX: slot.x,
     maxX: slot.x + slot.width,
@@ -157,7 +170,7 @@ function cardBand(session: SessionState, id: CardFace, slot: Rect): BandLayout {
     maxY: slot.y + slot.height,
   };
   return {
-    ...clampCentre(bounds, session.placements[id]),
+    ...clampCentre(bounds, input.placements[id]),
     ...bandGeometry(fontSize, slot.width, lengthFactor),
     fontSize,
     bounds,
@@ -180,12 +193,12 @@ function placeScan(scan: Scan | undefined, slot: Rect): { box: Rect; image: Imag
 /** A Page is contain-fitted to the whole sheet, edge to edge: never cropped,
  *  and with no margin, since the Page is the paper. The sheet turns landscape
  *  when the Page does, so a landscape Page is not shrunk onto a portrait one. */
-function pageLayout(session: SessionState): CopyLayout {
-  const { sheet, slot, box, image } = pageFrame(session.scans.page);
+function pageLayout(input: CopyInput): CopyLayout {
+  const { sheet, slot, box, image } = pageFrame(input.scans.page);
   return {
     sheet,
     slots: [
-      { id: "page", slot, box, cornerRadius: 0, image, band: pageBand(session, sheet, box) },
+      { id: "page", slot, box, cornerRadius: 0, image, band: pageBand(input, sheet, box) },
     ],
   };
 }
@@ -208,12 +221,12 @@ function pageOrientation(scan: Scan | undefined): Orientation {
  *  never cut by the edge of the Copy. Sized by document width over card width,
  *  so it keeps its MyKad proportions. */
 function pageBand(
-  session: SessionState,
+  input: CopyInput,
   sheet: { width: number; height: number },
   doc: Rect,
 ): BandLayout {
-  const { angleDeg, lengthFactor } = session.style;
-  const fontSize = session.style.fontSize * (doc.width / cardSize().width);
+  const { angleDeg, lengthFactor } = input.style;
+  const fontSize = input.style.fontSize * (doc.width / cardSize().width);
   const geometry = bandGeometry(fontSize, doc.width, lengthFactor);
   const halfThick = geometry.lineGap / 2 + geometry.strokeWidth / 2;
   const t = (angleDeg * Math.PI) / 180;
@@ -233,7 +246,7 @@ function pageBand(
   const bounds: CentreBounds = { minX, maxX, minY, maxY };
 
   return {
-    ...clampCentre(bounds, session.placements.page),
+    ...clampCentre(bounds, input.placements.page),
     ...geometry,
     length,
     fontSize,

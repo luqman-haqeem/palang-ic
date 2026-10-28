@@ -1,6 +1,6 @@
 import type React from "react";
 import { DEFAULT_PALANG_TEXT } from "@/domain/palang";
-import type { DocumentKind } from "@/state/session";
+import type { DocumentKind } from "@/domain/document";
 
 /** A Page can be any paper, so its hint cannot name the fields to avoid. */
 const KEEP_CLEAR: Record<DocumentKind, string> = {

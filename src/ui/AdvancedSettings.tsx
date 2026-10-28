@@ -3,7 +3,7 @@ import type { BandStyle, PalangPlacement } from "@/domain/palang";
 import { BandStyleControls } from "@/ui/BandStyleControls";
 import { CardStyleControls } from "@/ui/CardStyleControls";
 import { PlacementControls } from "@/ui/PlacementControls";
-import type { DocumentKind } from "@/state/session";
+import type { DocumentKind } from "@/domain/document";
 import { SettingsReadout } from "@/ui/SettingsReadout";
 
 type Props = {

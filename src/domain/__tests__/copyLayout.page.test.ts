@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { type BandLayout, copyLayout, layoutSlot } from "@/domain/copyLayout";
 import { initialCrop, rotateCrop, setCropOrientation } from "@/domain/crop";
 import type { BandStyle } from "@/domain/palang";
-import { initialState, type Scan, type SessionState } from "@/state/session";
+import type { Scan } from "@/domain/document";
+import { initialState, type SessionState } from "@/state/session";
 
 const TODAY = "2026-10-01";
 const fakeScan = (width: number, height: number): Scan =>

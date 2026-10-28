@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { type SlotId, slotKind } from "@/domain/copyLayout";
 import { loadScan } from "@/input/loadScan";
-import type { Scan } from "@/state/session";
+import type { Scan } from "@/domain/document";
 
 type Props = {
   slot: SlotId;

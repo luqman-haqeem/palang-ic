@@ -15,7 +15,7 @@ import {
   zoomCropArea,
 } from "@/domain/crop";
 import type { Orientation, Rect } from "@/domain/page";
-import type { Scan } from "@/state/session";
+import type { Scan } from "@/domain/document";
 
 type Props = {
   slot: SlotId;

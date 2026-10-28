@@ -1,4 +1,4 @@
-import type { DocumentKind } from "@/state/session";
+import type { DocumentKind } from "@/domain/document";
 
 type Props = {
   kind: DocumentKind;

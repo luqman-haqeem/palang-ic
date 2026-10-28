@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { copyLayout, layoutSlot } from "@/domain/copyLayout";
-import { initialState, type Scan } from "@/state/session";
+import { initialState } from "@/state/session";
+import type { Scan } from "@/domain/document";
 
 const TODAY = "2026-10-01";
 const fakeScan = (width = 856, height = 540): Scan =>

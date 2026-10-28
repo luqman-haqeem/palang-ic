@@ -3,7 +3,8 @@ import { cardRect } from "@/domain/page";
 import { copyLayout, defaultPlacement, layoutSlot } from "@/domain/copyLayout";
 import { initialCrop } from "@/domain/crop";
 import { DEFAULT_BAND_STYLE, DEFAULT_PALANG_TEXT } from "@/domain/palang";
-import { canExport, initialState, reducer, type Scan } from "@/state/session";
+import { canExport, initialState, reducer } from "@/state/session";
+import type { Scan } from "@/domain/document";
 import { SAVED_LINES_KEY } from "@/state/savedLines";
 
 const TODAY = "2026-10-01";

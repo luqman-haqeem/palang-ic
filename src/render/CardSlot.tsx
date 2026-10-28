@@ -2,7 +2,7 @@ import type Konva from "konva";
 import { Group, Image as KonvaImage, Rect as KonvaRect } from "react-konva";
 import type { SlotLayout } from "@/domain/copyLayout";
 import { clampCornerRadius, type Rect } from "@/domain/page";
-import type { Scan } from "@/state/session";
+import type { Scan } from "@/domain/document";
 
 /** Rounded-rect path, used as a clip so a scan's square corners do not read as
  *  a screenshot. `arcTo` rather than `roundRect` for older Safari. */
