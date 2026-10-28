@@ -2,6 +2,7 @@ import type Konva from "konva";
 import { Group, Line, Text } from "react-konva";
 import { type BandLayout, clampCentre } from "@/domain/copyLayout";
 import { type BandStyle, fitFontSize, FONT_FLOOR } from "@/domain/palang";
+import { boundDragPosition } from "@/render/dragBound";
 import { FONT_FAMILY, measureText } from "@/render/measureText";
 
 type Props = {
@@ -20,7 +21,8 @@ type Props = {
  *  `dragBoundFunc` as well as in the reducer: react-konva skips re-applying an
  *  x/y prop whose value is unchanged, so a reducer clamp that returns the value
  *  already in state would leave the band sitting where it was dropped. Both
- *  paths call the same tested `clampCentre` with the layout's bounds. */
+ *  paths call the same tested `clampCentre` with the layout's bounds, the drag
+ *  through `boundDragPosition`, which converts the preview's screen px. */
 export function PalangBand({ band, style, line, selected, onSelect, onDragEnd }: Props) {
   const { lineGap, strokeWidth, length, bounds } = band;
   const size = fitFontSize(line, length * 0.94, band.fontSize, FONT_FLOOR, measureText);
@@ -35,15 +37,7 @@ export function PalangBand({ band, style, line, selected, onSelect, onDragEnd }:
       opacity={style.opacity}
       draggable
       dragBoundFunc={function (this: Konva.Node, pos) {
-        // `pos` is in absolute (preview-scaled) px, but `bounds` are in sheet
-        // px: unscaled, the limits shrink with the preview and a band on a
-        // phone-width preview stops short of the sheet edge.
-        const toSheet = this.getParent()!.getAbsoluteTransform().copy();
-        const toScreen = toSheet.copy();
-        toSheet.invert();
-        const local = toSheet.point(pos);
-        const clamped = clampCentre(bounds, { cx: local.x, cy: local.y });
-        return toScreen.point({ x: clamped.cx, y: clamped.cy });
+        return boundDragPosition(pos, this.getParent()!.getAbsoluteTransform().getMatrix(), bounds);
       }}
       onClick={onSelect}
       onTap={onSelect}
