@@ -8,5 +8,8 @@
     "directory": "./dist",
     "not_found_handling": "single-page-application"
   },
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  // Required by `wrangler preview`, which Workers Builds runs for non-production
+  // branches. Empty: assets and compatibility settings stay at the top level.
+  "previews": {}
 }
