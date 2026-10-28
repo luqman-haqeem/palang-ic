@@ -6,6 +6,7 @@ import {
   type Size,
   sheetSize,
 } from "@/domain/sheet";
+import type { DocumentKind } from "@/domain/document";
 import { BASE_PIXEL_RATIO } from "@/export/exportScale";
 
 /** Quarter turns clockwise. A card photographed in portrait is lying on its
@@ -41,31 +42,28 @@ export function needsCrop(width: number, height: number): boolean {
   return Math.abs(width / height / cardRatio() - 1) > CARD_SHAPE_TOLERANCE;
 }
 
-/** What a Crop fills: a Card face's box, or the whole sheet for a Page. */
-export type CropTarget = "card" | "page";
-
 /** The box a Crop fills, in sheet px. A Page's is the A4 sheet in the Crop's
  *  own orientation; a card's is the card box, whatever `orientation` says. */
-export function cropBox(target: CropTarget, orientation: Orientation): Size {
-  return target === "card" ? cardSize() : sheetSize(orientation);
+export function cropBox(kind: DocumentKind, orientation: Orientation): Size {
+  return kind === "mykad" ? cardSize() : sheetSize(orientation);
 }
 
-/** The shape (width over height) a Crop of `target` keeps. */
-export function cropRatio(target: CropTarget, orientation: Orientation): number {
-  const box = cropBox(target, orientation);
+/** The shape (width over height) a Crop of `kind` keeps. */
+export function cropRatio(kind: DocumentKind, orientation: Orientation): number {
+  const box = cropBox(kind, orientation);
   return box.width / box.height;
 }
 
-/** The largest area of the target's shape that fits in a width x height image,
+/** The largest area of the kind's shape that fits in a width x height image,
  *  centred. Where the editor starts, and where Reset, rotating and turning the
  *  frame return to. */
 export function defaultCropArea(
   width: number,
   height: number,
-  target: CropTarget = "card",
-  orientation: Orientation = "landscape",
+  kind: DocumentKind,
+  orientation: Orientation,
 ): Rect {
-  const ratio = cropRatio(target, orientation);
+  const ratio = cropRatio(kind, orientation);
   const byWidth = width / ratio <= height;
   const w = byWidth ? width : height * ratio;
   const h = byWidth ? width / ratio : height;
@@ -78,14 +76,14 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), h
  *  holds its IC number to 300dpi. A Page is held to 150dpi instead: a phone
  *  photo of a whole document rarely has 300dpi to give once trimmed, and body
  *  text survives 150dpi where a card's small print may not. */
-const MIN_PIXEL_RATIO: Record<CropTarget, number> = {
-  card: BASE_PIXEL_RATIO,
+const MIN_PIXEL_RATIO: Record<DocumentKind, number> = {
+  mykad: BASE_PIXEL_RATIO,
   page: 150 / 96,
 };
 
-/** Pulls a requested area back to one the editor allows: the target's shape,
+/** Pulls a requested area back to one the editor allows: the kind's shape,
  *  inside the photo, no wider than the photo allows and no narrower than the
- *  target's box at its minimum sharpness (300dpi for a card) — any narrower
+ *  kind's box at its minimum sharpness (300dpi for a card) — any narrower
  *  and the export would upscale and print soft. A photo too small for that
  *  cannot zoom in at all. Width wins over height, and the area keeps its
  *  centre while its size changes. */
@@ -93,14 +91,14 @@ export function clampCropArea(
   area: Rect,
   width: number,
   height: number,
-  target: CropTarget = "card",
-  orientation: Orientation = "landscape",
+  kind: DocumentKind,
+  orientation: Orientation,
 ): Rect {
-  const ratio = cropRatio(target, orientation);
-  const largest = defaultCropArea(width, height, target, orientation);
+  const ratio = cropRatio(kind, orientation);
+  const largest = defaultCropArea(width, height, kind, orientation);
   const sharpest = Math.min(
     largest.width,
-    cropBox(target, orientation).width * MIN_PIXEL_RATIO[target],
+    cropBox(kind, orientation).width * MIN_PIXEL_RATIO[kind],
   );
   const w = clamp(area.width, sharpest, largest.width);
   const h = w === largest.width ? largest.height : w / ratio;
@@ -124,14 +122,14 @@ export function zoomCropArea(
   focus: { x: number; y: number },
   width: number,
   height: number,
-  target: CropTarget = "card",
-  orientation: Orientation = "landscape",
+  kind: DocumentKind,
+  orientation: Orientation,
 ): Rect {
   const w = clampCropArea(
     { ...area, width: area.width / factor },
     width,
     height,
-    target,
+    kind,
     orientation,
   ).width;
   const k = w / area.width;
@@ -140,11 +138,11 @@ export function zoomCropArea(
       x: focus.x - (focus.x - area.x) * k,
       y: focus.y - (focus.y - area.y) * k,
       width: w,
-      height: w / cropRatio(target, orientation),
+      height: w / cropRatio(kind, orientation),
     },
     width,
     height,
-    target,
+    kind,
     orientation,
   );
 }
@@ -153,12 +151,12 @@ export function rotatedSize(width: number, height: number, rotation: Rotation): 
   return rotation % 180 === 0 ? { width, height } : { width: height, height: width };
 }
 
-/** Upright, framed on the largest centred area of the target's shape. A
+/** Upright, framed on the largest centred area of the kind's shape. A
  *  Page's frame starts the photo's way up, the likelier guess; the user can
  *  turn it. */
-export function initialCrop(width: number, height: number, target: CropTarget = "card"): Crop {
-  const orientation = target === "card" ? "landscape" : orientationOf({ width, height });
-  return { rotation: 0, area: defaultCropArea(width, height, target, orientation), orientation };
+export function initialCrop(width: number, height: number, kind: DocumentKind): Crop {
+  const orientation = kind === "mykad" ? "landscape" : orientationOf({ width, height });
+  return { rotation: 0, area: defaultCropArea(width, height, kind, orientation), orientation };
 }
 
 /** A quarter turn either way, of the photo only: the frame keeps its
@@ -169,14 +167,14 @@ export function rotateCrop(
   step: 90 | -90,
   width: number,
   height: number,
-  target: CropTarget = "card",
+  kind: DocumentKind,
 ): Crop {
   const rotation = ((crop.rotation + step + 360) % 360) as Rotation;
   const turned = rotatedSize(width, height, rotation);
   return {
     ...crop,
     rotation,
-    area: defaultCropArea(turned.width, turned.height, target, crop.orientation),
+    area: defaultCropArea(turned.width, turned.height, kind, crop.orientation),
   };
 }
 
@@ -187,13 +185,13 @@ export function setCropOrientation(
   orientation: Orientation,
   width: number,
   height: number,
-  target: CropTarget = "card",
+  kind: DocumentKind,
 ): Crop {
   const turned = rotatedSize(width, height, crop.rotation);
   return {
     ...crop,
     orientation,
-    area: defaultCropArea(turned.width, turned.height, target, orientation),
+    area: defaultCropArea(turned.width, turned.height, kind, orientation),
   };
 }
 

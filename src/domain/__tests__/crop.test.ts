@@ -12,6 +12,9 @@ import {
   zoomCropArea,
 } from "@/domain/crop";
 
+/** A MyKad's frame, which is always the landscape card. */
+const CARD = ["mykad", "landscape"] as const;
+
 describe("needsCrop", () => {
   it("opens the editor for a portrait phone photo", () => {
     expect(needsCrop(3000, 4000)).toBe(true);
@@ -38,7 +41,7 @@ describe("needsCrop", () => {
 
 describe("defaultCropArea", () => {
   it("frames the widest card-shaped area across the middle of a portrait photo", () => {
-    const area = defaultCropArea(3000, 4000);
+    const area = defaultCropArea(3000, 4000, ...CARD);
     expect(area.x).toBe(0);
     expect(area.width).toBe(3000);
     expect(area.height).toBeCloseTo(1894.74, 2); // 3000 / (323/204)
@@ -46,7 +49,7 @@ describe("defaultCropArea", () => {
   });
 
   it("frames the full height of a photo wider than a card", () => {
-    const area = defaultCropArea(4000, 1000);
+    const area = defaultCropArea(4000, 1000, ...CARD);
     expect(area.y).toBe(0);
     expect(area.height).toBe(1000);
     expect(area.width).toBeCloseTo(1583.33, 2); // 1000 * (323/204)
@@ -59,28 +62,28 @@ describe("clampCropArea", () => {
   const area = (x: number, y: number, width: number) => ({ x, y, width, height: width / RATIO });
 
   it("stops zooming out once the photo fills the frame", () => {
-    const a = clampCropArea(area(-500, 0, 5000), 3000, 4000);
+    const a = clampCropArea(area(-500, 0, 5000), 3000, 4000, ...CARD);
     expect(a.width).toBe(3000);
   });
 
   it("stops zooming in where the crop would print below 300dpi", () => {
-    const a = clampCropArea(area(1000, 1000, 400), 3000, 4000);
+    const a = clampCropArea(area(1000, 1000, 400), 3000, 4000, ...CARD);
     expect(a.width).toBeCloseTo(1009.375, 3); // 323px card box x 300/96
   });
 
   it("lets a photo too small for 300dpi fill the frame but not zoom in", () => {
-    const a = clampCropArea(area(100, 100, 300), 800, 1000);
+    const a = clampCropArea(area(100, 100, 300), 800, 1000, ...CARD);
     expect(a.width).toBe(800);
   });
 
   it("keeps the card shape whatever it is asked to do", () => {
-    const a = clampCropArea({ x: 0, y: 0, width: 2000, height: 300 }, 3000, 4000);
+    const a = clampCropArea({ x: 0, y: 0, width: 2000, height: 300 }, 3000, 4000, ...CARD);
     expect(a.width / a.height).toBeCloseTo(RATIO, 6);
   });
 
   it("stops a pan at the edge of the photo, so the frame is never left uncovered", () => {
-    expect(clampCropArea(area(-200, -50, 2000), 3000, 4000)).toMatchObject({ x: 0, y: 0 });
-    const far = clampCropArea(area(2500, 3900, 2000), 3000, 4000);
+    expect(clampCropArea(area(-200, -50, 2000), 3000, 4000, ...CARD)).toMatchObject({ x: 0, y: 0 });
+    const far = clampCropArea(area(2500, 3900, 2000), 3000, 4000, ...CARD);
     expect(far.x).toBe(1000);
     expect(far.y + far.height).toBeCloseTo(4000, 6);
   });
@@ -90,19 +93,19 @@ describe("zoomCropArea", () => {
   const start = { x: 0, y: 1000, width: 3000, height: 3000 * (204 / 323) };
 
   it("keeps the point under the fingers still while zooming in", () => {
-    const a = zoomCropArea(start, 2, { x: 0, y: 1000 }, 3000, 4000);
+    const a = zoomCropArea(start, 2, { x: 0, y: 1000 }, 3000, 4000, ...CARD);
     expect(a).toMatchObject({ x: 0, y: 1000, width: 1500 });
   });
 
   it("zooms about the middle of the frame for the + button", () => {
     const mid = { x: 1500, y: 1000 + start.height / 2 };
-    const a = zoomCropArea(start, 2, mid, 3000, 4000);
+    const a = zoomCropArea(start, 2, mid, 3000, 4000, ...CARD);
     expect(a.x).toBeCloseTo(750, 6);
     expect(a.y + a.height / 2).toBeCloseTo(mid.y, 6);
   });
 
   it("still respects the 300dpi zoom limit", () => {
-    const a = zoomCropArea(start, 10, { x: 1500, y: 2000 }, 3000, 4000);
+    const a = zoomCropArea(start, 10, { x: 1500, y: 2000 }, 3000, 4000, ...CARD);
     expect(a.width).toBeCloseTo(1009.375, 3);
   });
 });
@@ -117,19 +120,19 @@ describe("rotatedSize", () => {
 
 describe("rotateCrop", () => {
   it("turns a sideways card upright and reframes the whole of the turned photo", () => {
-    const turned = rotateCrop(initialCrop(3000, 4000), 90, 3000, 4000);
+    const turned = rotateCrop(initialCrop(3000, 4000, "mykad"), 90, 3000, 4000, "mykad");
     expect(turned.rotation).toBe(90);
-    expect(turned.area).toEqual(defaultCropArea(4000, 3000));
+    expect(turned.area).toEqual(defaultCropArea(4000, 3000, ...CARD));
   });
 
   it("turns anticlockwise from upright to 270", () => {
-    expect(rotateCrop(initialCrop(3000, 4000), -90, 3000, 4000).rotation).toBe(270);
+    expect(rotateCrop(initialCrop(3000, 4000, "mykad"), -90, 3000, 4000, "mykad").rotation).toBe(270);
   });
 
   it("comes back upright after four quarter turns", () => {
-    let crop = initialCrop(3000, 4000);
-    for (let i = 0; i < 4; i++) crop = rotateCrop(crop, 90, 3000, 4000);
-    expect(crop).toEqual(initialCrop(3000, 4000));
+    let crop = initialCrop(3000, 4000, "mykad");
+    for (let i = 0; i < 4; i++) crop = rotateCrop(crop, 90, 3000, 4000, "mykad");
+    expect(crop).toEqual(initialCrop(3000, 4000, "mykad"));
   });
 });
 
@@ -232,14 +235,14 @@ describe("a Page Crop", () => {
   });
 
   it("leaves a MyKad Crop card-shaped and landscape", () => {
-    expect(initialCrop(3000, 4000).orientation).toBe("landscape");
-    expect(defaultCropArea(3000, 4000)).toEqual(defaultCropArea(3000, 4000, "card"));
+    expect(initialCrop(3000, 4000, "mykad").orientation).toBe("landscape");
+    expect(cropBox("mykad", "portrait")).toEqual({ width: 323, height: 204 });
   });
 });
 
 describe("cropBox", () => {
   it("is the card box for a Card face, however the photo is turned", () => {
-    expect(cropBox("card", "landscape")).toEqual({ width: 323, height: 204 });
+    expect(cropBox("mykad", "landscape")).toEqual({ width: 323, height: 204 });
   });
 
   it("is the A4 sheet for a Page, in the Crop's own orientation", () => {

@@ -6,7 +6,6 @@ import {
   clampCropArea,
   type Crop,
   cropBox,
-  type CropTarget,
   defaultCropArea,
   initialCrop,
   rotateCrop,
@@ -42,9 +41,9 @@ type Point = { x: number; y: number };
  *  always covering it, the zoom limit, rotation — lives in domain/crop; this
  *  only turns gestures into calls. */
 export function CropEditor({ slot, scan, radius, onApply, onCancel }: Props) {
-  const target: CropTarget = slotKind(slot) === "page" ? "page" : "card";
+  const kind = slotKind(slot);
   const [crop, setCrop] = useState<Crop>(
-    () => scan.crop ?? initialCrop(scan.width, scan.height, target),
+    () => scan.crop ?? initialCrop(scan.width, scan.height, kind),
   );
   const box = useRef<HTMLDivElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
@@ -65,7 +64,7 @@ export function CropEditor({ slot, scan, radius, onApply, onCancel }: Props) {
   // The whole photo as currently turned. The frame keeps its own orientation:
   // turning the photo never turns a Page's frame.
   const turned = rotatedSize(scan.width, scan.height, crop.rotation);
-  const frameBox = cropBox(target, crop.orientation);
+  const frameBox = cropBox(kind, crop.orientation);
   const ratio = frameBox.width / frameBox.height;
   const frameWidth = Math.min(size.width * 0.9, size.height * 0.9 * ratio);
   const frame: Rect = {
@@ -96,7 +95,7 @@ export function CropEditor({ slot, scan, radius, onApply, onCancel }: Props) {
         { ...c.area, x: c.area.x - dx / scale, y: c.area.y - dy / scale },
         turned.width,
         turned.height,
-        target,
+        kind,
         c.orientation,
       );
     });
@@ -109,12 +108,12 @@ export function CropEditor({ slot, scan, radius, onApply, onCancel }: Props) {
         x: c.area.x + (at.x - frame.x) / scale,
         y: c.area.y + (at.y - frame.y) / scale,
       };
-      return zoomCropArea(c.area, factor, focus, turned.width, turned.height, target, c.orientation);
+      return zoomCropArea(c.area, factor, focus, turned.width, turned.height, kind, c.orientation);
     });
   }
 
   function turn(step: 90 | -90) {
-    setCrop((c) => rotateCrop(c, step, scan.width, scan.height, target));
+    setCrop((c) => rotateCrop(c, step, scan.width, scan.height, kind));
   }
 
   /** Reframes in the editor, for a card and a Page alike: it undoes the
@@ -122,12 +121,12 @@ export function CropEditor({ slot, scan, radius, onApply, onCancel }: Props) {
    *  applied until the user says so. */
   function reset() {
     changeArea((c, turned) =>
-      defaultCropArea(turned.width, turned.height, target, c.orientation),
+      defaultCropArea(turned.width, turned.height, kind, c.orientation),
     );
   }
 
   function orient(orientation: Orientation) {
-    setCrop((c) => setCropOrientation(c, orientation, scan.width, scan.height, target));
+    setCrop((c) => setCropOrientation(c, orientation, scan.width, scan.height, kind));
   }
 
   // Pointers: one drags the photo, two pinch it.
@@ -250,7 +249,7 @@ export function CropEditor({ slot, scan, radius, onApply, onCancel }: Props) {
           <div className="flex gap-1">
             {/* A Page's frame is turned on its own, apart from the photo: a
                 document lying upright in a sideways photo needs no rotation. */}
-            {target === "page" && (
+            {kind === "page" && (
               <div role="group" aria-label="Frame orientation" className="mr-2 flex gap-1">
                 {(["portrait", "landscape"] as const).map((o) => (
                   <button
