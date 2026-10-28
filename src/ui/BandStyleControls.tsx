@@ -21,7 +21,7 @@ const INK_PRESETS = [
 ];
 
 /** Band length is a fraction of the document's width, so name the document. */
-const LENGTH_OF: Record<DocumentKind, string> = { mykad: "card width", page: "page width" };
+const LENGTH_RELATIVE_TO: Record<DocumentKind, string> = { mykad: "card width", page: "page width" };
 
 type Props = {
   kind: DocumentKind;
@@ -49,7 +49,7 @@ export function BandStyleControls({ kind, style, onChange }: Props) {
       </label>
 
       <label className="block text-xs">
-        Length: {Math.round(style.lengthFactor * 100)}% of {LENGTH_OF[kind]}
+        Length: {Math.round(style.lengthFactor * 100)}% of {LENGTH_RELATIVE_TO[kind]}
         <input
           type="range"
           min={LENGTH_MIN}

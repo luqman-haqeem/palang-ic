@@ -14,6 +14,7 @@ export function buildPdfDoc(jpegDataUrl: string, orientation: Orientation): jsPD
   return doc;
 }
 
+/** The PDF as a file to download, from the same one-page document. */
 export function buildPdfBlob(jpegDataUrl: string, orientation: Orientation): Blob {
   return buildPdfDoc(jpegDataUrl, orientation).output("blob");
 }

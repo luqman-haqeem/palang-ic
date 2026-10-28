@@ -147,6 +147,7 @@ export function zoomCropArea(
   );
 }
 
+/** The photo's size once turned: the area of a Crop is measured in it. */
 export function rotatedSize(width: number, height: number, rotation: Rotation): Size {
   return rotation % 180 === 0 ? { width, height } : { width: height, height: width };
 }
@@ -210,6 +211,8 @@ export type CardImageGeometry = {
   rotation: Rotation;
 };
 
+/** Lays a Crop's area of the photo over `card`, upright. Named for the card
+ *  but used for any box a Crop fills, a Page's sheet included. */
 export function cardImageGeometry(
   { rotation, area }: Pick<Crop, "rotation" | "area">,
   width: number,

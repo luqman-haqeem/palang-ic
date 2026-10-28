@@ -7,6 +7,8 @@ export const MAX_EDGE = 4096;
 export const REJECT_MESSAGE =
   "Only JPEG, PNG and WebP images are accepted. If your scanner produced a PDF, export it as JPEG first.";
 
+/** Checked before decoding, so an unsupported file gets a message saying what
+ *  to do instead of a decode error. */
 export function validateFile(
   file: { type: string },
 ): { ok: true } | { ok: false; message: string } {
@@ -31,6 +33,8 @@ export function downscaleTarget(width: number, height: number): Size {
   };
 }
 
+/** Decodes an upload into a Scan held only in memory, downscaled to MAX_EDGE
+ *  when larger so the preview and export stay inside canvas limits. */
 export async function loadScan(file: File): Promise<Scan> {
   const check = validateFile(file);
   if (!check.ok) throw new Error(check.message);

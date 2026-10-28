@@ -57,6 +57,7 @@ export function cardSize(): Size {
   };
 }
 
+/** The true card radius in sheet px: the default rounding for MyKad scans. */
 export function cardCornerRadius(): number {
   return mmToPx(CARD_CORNER_RADIUS_MM);
 }
@@ -67,6 +68,8 @@ export function clampCornerRadius(radius: number, width: number, height: number)
   return Math.max(0, Math.min(radius, width / 2, height / 2));
 }
 
+/** A Card face's box on the portrait sheet: centred, the front below the top
+ *  margin and the back a face gap under it, so both fit one A4 Copy. */
 export function cardRect(face: CardFace): Rect {
   const { width, height } = cardSize();
   const x = Math.floor((SHEET.widthPx - width) / 2);

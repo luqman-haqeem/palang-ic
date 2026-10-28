@@ -7,6 +7,8 @@ import { exportPixelRatio } from "@/export/exportScale";
  *  card slot (which would otherwise print as a grey box on a one-sided Copy). */
 export const PREVIEW_ONLY_NAMES = ["selection", "placeholder"] as const;
 
+/** Renders the stage at 300dpi with the preview-only nodes hidden, and shows
+ *  them again even if the render throws. */
 export function renderToDataUrl(
   stage: Konva.Stage,
   opts: { mimeType: string; quality?: number },
@@ -22,6 +24,7 @@ export function renderToDataUrl(
   }
 }
 
+/** Saves through a temporary object URL; nothing is uploaded anywhere. */
 export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -32,6 +35,8 @@ export function downloadBlob(blob: Blob, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
+/** As a Blob rather than a data URL link, which some browsers refuse to
+ *  download at a full A4-at-300dpi size. */
 export function downloadDataUrl(dataUrl: string, filename: string): void {
   downloadBlob(dataUrlToBlob(dataUrl), filename);
 }

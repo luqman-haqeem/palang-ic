@@ -52,9 +52,9 @@ export type BandLayout = {
 export type SlotLayout = {
   id: SlotId;
   /** The slot's box on the sheet, outlined while it has no Scan. */
-  slot: Rect;
+  outline: Rect;
   /** Where the Document shows on the sheet, and the shape its corners are
-   *  rounded on. The slot itself when there is no Scan. */
+   *  rounded on. The outline itself when there is no Scan. */
   box: Rect;
   cornerRadius: number;
   /** Null while the slot has no Scan. */
@@ -77,6 +77,9 @@ export function kindSlots(kind: DocumentKind): SlotId[] {
   return kind === "page" ? ["page"] : FACES;
 }
 
+/** The kind a slot belongs to, whichever kind is active: both kinds' slots
+ *  are held side by side, so a slot is laid out, cropped and clamped as its
+ *  own kind. */
 export function slotKind(id: SlotId): DocumentKind {
   return id === "page" ? "page" : "mykad";
 }
@@ -92,6 +95,9 @@ export function copyLayout(input: CopyInput): CopyLayout {
   };
 }
 
+/** One slot's layout, for callers that know which slot they want. Throws
+ *  rather than returning undefined: asking for a slot the active kind does not
+ *  draw is a bug, not a state to handle. */
 export function layoutSlot(layout: CopyLayout, id: SlotId): SlotLayout {
   const slot = layout.slots.find((s) => s.id === id);
   if (!slot) throw new Error(`No ${id} slot on this Copy.`);
@@ -145,15 +151,15 @@ export function clampCentre(
 }
 
 function cardSlot(input: CopyInput, id: CardFace): SlotLayout {
-  const slot = cardRect(id);
-  const { box, image } = placeScan(input.scans[id], slot);
+  const outline = cardRect(id);
+  const { box, image } = placeScan(input.scans[id], outline);
   return {
     id,
-    slot,
+    outline,
     box,
     cornerRadius: input.cornerRadius,
     image,
-    band: cardBand(input, id, slot),
+    band: cardBand(input, id, outline),
   };
 }
 
@@ -161,32 +167,32 @@ function cardSlot(input: CopyInput, id: CardFace): SlotLayout {
  *  so it can overhang onto the sheet: a palang is a stroke drawn across a copy,
  *  not a graphic fitted inside the card. The card sits well inside the sheet,
  *  so an overhanging band still never runs off the Copy. */
-function cardBand(input: CopyInput, id: CardFace, slot: Rect): BandLayout {
+function cardBand(input: CopyInput, id: CardFace, card: Rect): BandLayout {
   const { fontSize, lengthFactor } = input.style;
   const bounds: CentreBounds = {
-    minX: slot.x,
-    maxX: slot.x + slot.width,
-    minY: slot.y,
-    maxY: slot.y + slot.height,
+    minX: card.x,
+    maxX: card.x + card.width,
+    minY: card.y,
+    maxY: card.y + card.height,
   };
   return {
     ...clampCentre(bounds, input.placements[id]),
-    ...bandGeometry(fontSize, slot.width, lengthFactor),
+    ...bandGeometry(fontSize, card.width, lengthFactor),
     fontSize,
     bounds,
   };
 }
 
-/** A Crop has the slot's shape, so it fills the slot exactly and the slot is
- *  what gets rounded. An uncropped scan is contain-fitted instead, and rounded
- *  on its own fitted edges: rounding the slot would leave a letterboxed
- *  image's corners square inside it. */
-function placeScan(scan: Scan | undefined, slot: Rect): { box: Rect; image: ImageNode | null } {
-  if (!scan) return { box: slot, image: null };
+/** A Crop has the outline's shape, so it fills the outline exactly and the
+ *  outline is what gets rounded. An uncropped scan is contain-fitted instead,
+ *  and rounded on its own fitted edges: rounding the outline would leave a
+ *  letterboxed image's corners square inside it. */
+function placeScan(scan: Scan | undefined, outline: Rect): { box: Rect; image: ImageNode | null } {
+  if (!scan) return { box: outline, image: null };
   if (scan.crop) {
-    return { box: slot, image: cardImageGeometry(scan.crop, scan.width, scan.height, slot) };
+    return { box: outline, image: cardImageGeometry(scan.crop, scan.width, scan.height, outline) };
   }
-  const box = containFit(scan.width, scan.height, slot);
+  const box = containFit(scan.width, scan.height, outline);
   return { box, image: { ...box, offsetX: 0, offsetY: 0, rotation: 0 } };
 }
 
@@ -195,19 +201,27 @@ function placeScan(scan: Scan | undefined, slot: Rect): { box: Rect; image: Imag
  *  with a landscape Crop frame, or an uncropped Scan wider than tall, so a
  *  landscape Page is not shrunk onto a portrait sheet. */
 function pageLayout(input: CopyInput): CopyLayout {
-  const { sheet, slot, box, image } = pageFrame(input.scans.page);
+  const { sheet, outline, box, image } = pageFrame(input.scans.page);
   return {
     sheet,
     slots: [
-      { id: "page", slot, box, cornerRadius: 0, image, band: pageBand(input, sheet, box) },
+      { id: "page", outline, box, cornerRadius: 0, image, band: pageBand(input, sheet, box) },
     ],
   };
 }
 
-function pageFrame(scan: Scan | undefined) {
+/** The Page's whole frame: the sheet it sets the size of, the outline that
+ *  fills it, and where the Scan lands inside. One function so the layout and
+ *  `defaultPlacement` place the Page identically. */
+function pageFrame(scan: Scan | undefined): {
+  sheet: Size;
+  outline: Rect;
+  box: Rect;
+  image: ImageNode | null;
+} {
   const sheet = sheetSize(pageOrientation(scan));
-  const slot: Rect = { x: 0, y: 0, ...sheet };
-  return { sheet, slot, ...placeScan(scan, slot) };
+  const outline: Rect = { x: 0, y: 0, ...sheet };
+  return { sheet, outline, ...placeScan(scan, outline) };
 }
 
 /** The way up the sheet sits: a Crop's own frame once framed, else the whole
@@ -230,9 +244,9 @@ function pageBand(
   const fontSize = input.style.fontSize * (doc.width / cardSize().width);
   const geometry = bandGeometry(fontSize, doc.width, lengthFactor);
   const halfThick = geometry.lineGap / 2 + geometry.strokeWidth / 2;
-  const t = (angleDeg * Math.PI) / 180;
-  const cos = Math.abs(Math.cos(t));
-  const sin = Math.abs(Math.sin(t));
+  const angle = (angleDeg * Math.PI) / 180;
+  const cos = Math.abs(Math.cos(angle));
+  const sin = Math.abs(Math.sin(angle));
 
   // The longest band whose rotated box fits the sheet at this angle.
   const byWidth = cos > 1e-9 ? (sheet.width - 2 * sin * halfThick) / cos : Infinity;
@@ -258,11 +272,16 @@ function pageBand(
 /** The sheet's range, narrowed to the document's span where the two overlap,
  *  so the centre stays over the Page when it can. A range that has closed up
  *  collapses to its middle. */
-function centreRange(lo: number, hi: number, docLo: number, docHi: number): [number, number] {
-  const a = Math.max(lo, docLo);
-  const b = Math.min(hi, docHi);
-  if (a <= b) return [a, b];
-  if (lo <= hi) return [lo, hi];
-  const mid = (lo + hi) / 2;
+function centreRange(
+  sheetLo: number,
+  sheetHi: number,
+  docLo: number,
+  docHi: number,
+): [number, number] {
+  const overlapLo = Math.max(sheetLo, docLo);
+  const overlapHi = Math.min(sheetHi, docHi);
+  if (overlapLo <= overlapHi) return [overlapLo, overlapHi];
+  if (sheetLo <= sheetHi) return [sheetLo, sheetHi];
+  const mid = (sheetLo + sheetHi) / 2;
   return [mid, mid];
 }

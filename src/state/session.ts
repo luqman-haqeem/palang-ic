@@ -51,6 +51,8 @@ export type Action =
   | { type: "resetPlacement"; slot: SlotId }
   | { type: "clearAll"; today: string };
 
+/** A fresh MyKad session with every slot's band at its default. The Page's is
+ *  clamped like any other, so state matches what is drawn from the start. */
 export function initialState(today: string): SessionState {
   const state: SessionState = {
     kind: "mykad",
@@ -65,15 +67,15 @@ export function initialState(today: string): SessionState {
     style: { ...DEFAULT_BAND_STYLE },
     cornerRadius: cardCornerRadius(),
   };
-  return settle(state, "page", state.placements.page);
+  return clampPlacement(state, "page", state.placements.page);
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
 
-/** Stores a slot's centre exactly where the Copy layout draws it, so state and
+/** Stores a slot's centre exactly where the Copy layout draws it, clamped, so state and
  *  preview cannot disagree about where the band is. Laid out as the slot's own
  *  kind, which need not be the active one. */
-function settle(state: SessionState, slot: SlotId, centre: PalangPlacement): SessionState {
+function clampPlacement(state: SessionState, slot: SlotId, centre: PalangPlacement): SessionState {
   const placements = { ...state.placements, [slot]: centre };
   const { cx, cy } = layoutSlot(
     copyLayout({ ...state, kind: slotKind(slot), placements }),
@@ -82,6 +84,8 @@ function settle(state: SessionState, slot: SlotId, centre: PalangPlacement): Ses
   return { ...state, placements: { ...placements, [slot]: { cx, cy } } };
 }
 
+/** Every action ends with any band it can move clamped to where it is drawn,
+ *  via `clampPlacement`, so state and preview never disagree. */
 export function reducer(state: SessionState, action: Action): SessionState {
   switch (action.type) {
     case "setKind":
@@ -92,7 +96,7 @@ export function reducer(state: SessionState, action: Action): SessionState {
       // A card keeps its tuned spot across scans of the same face; a new Page
       // may be any shape, so its band starts afresh on it.
       if (action.slot !== "page") return next;
-      return settle(next, "page", defaultPlacement("page", action.scan));
+      return clampPlacement(next, "page", defaultPlacement("page", action.scan));
     }
 
     case "removeScan": {
@@ -114,7 +118,7 @@ export function reducer(state: SessionState, action: Action): SessionState {
       // reframing the photo says nothing about where the palang should go. A
       // card's box is the same either way.
       if (action.slot !== "page") return next;
-      return settle(next, "page", next.placements.page);
+      return clampPlacement(next, "page", next.placements.page);
     }
 
     case "setLine":
@@ -137,17 +141,17 @@ export function reducer(state: SessionState, action: Action): SessionState {
       };
       // A Page band's limits depend on its angle and size, so a style change
       // can move it back onto the sheet. A card's limits are its card alone.
-      return settle(next, "page", next.placements.page);
+      return clampPlacement(next, "page", next.placements.page);
     }
 
     case "setCornerRadius":
       return { ...state, cornerRadius: clamp(action.radius, RADIUS_MIN, RADIUS_MAX) };
 
     case "setPlacement":
-      return settle(state, action.slot, { ...state.placements[action.slot], ...action.patch });
+      return clampPlacement(state, action.slot, { ...state.placements[action.slot], ...action.patch });
 
     case "resetPlacement":
-      return settle(state, action.slot, defaultPlacement(action.slot, state.scans.page));
+      return clampPlacement(state, action.slot, defaultPlacement(action.slot, state.scans.page));
 
     // Clears the work, not the choice: the user is still copying the same kind
     // of Document, so the next Scan lands where they expect.

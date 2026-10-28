@@ -23,17 +23,16 @@ type Props = { layout: SlotLayout; scan?: Scan };
 /** One slot's Scan on the sheet — a Card face or the Page — or its dashed
  *  outline while it has none. A thin reader of the Copy layout: every position
  *  and size comes from `layout`, and `scan` supplies only the pixels. */
-
 export function DocumentImage({ layout, scan }: Props) {
-  const { slot, box, cornerRadius, image } = layout;
+  const { outline, box, cornerRadius, image } = layout;
 
   if (!scan || !image) {
     return (
       <KonvaRect
-        x={slot.x}
-        y={slot.y}
-        width={slot.width}
-        height={slot.height}
+        x={outline.x}
+        y={outline.y}
+        width={outline.width}
+        height={outline.height}
         cornerRadius={cornerRadius}
         stroke="#d4d4d4"
         dash={[6, 6]}

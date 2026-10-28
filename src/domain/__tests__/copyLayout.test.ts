@@ -15,8 +15,8 @@ describe("copyLayout for a MyKad", () => {
   it("puts the front and back card slots where they have always been", () => {
     const layout = copyLayout(initialState(TODAY));
     expect(layout.slots.map((s) => s.id)).toEqual(["front", "back"]);
-    expect(layoutSlot(layout, "front").slot).toEqual({ x: 235, y: 94, width: 323, height: 204 });
-    expect(layoutSlot(layout, "back").slot).toEqual({ x: 235, y: 355, width: 323, height: 204 });
+    expect(layoutSlot(layout, "front").outline).toEqual({ x: 235, y: 94, width: 323, height: 204 });
+    expect(layoutSlot(layout, "back").outline).toEqual({ x: 235, y: 355, width: 323, height: 204 });
   });
 });
 
@@ -62,8 +62,8 @@ describe("copyLayout band geometry", () => {
   it("lets the default band's ends overhang the card's top-left corner", () => {
     const front = layoutSlot(copyLayout(initialState(TODAY)), "front");
     const reach = front.band.length / (2 * Math.SQRT2);
-    expect(front.band.cx - reach).toBeLessThan(front.slot.x);
-    expect(front.band.cy - reach).toBeLessThan(front.slot.y);
+    expect(front.band.cx - reach).toBeLessThan(front.outline.x);
+    expect(front.band.cy - reach).toBeLessThan(front.outline.y);
   });
 
   it("clamps a centre placed off its card back onto the card", () => {
@@ -77,7 +77,7 @@ describe("copyLayout document boxes", () => {
   it("leaves an empty slot without an image, boxed by the slot itself", () => {
     const front = layoutSlot(copyLayout(initialState(TODAY)), "front");
     expect(front.image).toBeNull();
-    expect(front.box).toEqual(front.slot);
+    expect(front.box).toEqual(front.outline);
   });
 
   it("contain-fits an uncropped scan inside its card slot, letterboxed and centred", () => {
@@ -118,7 +118,7 @@ describe("copyLayout document boxes", () => {
     const scan = { ...fakeScan(540, 856), crop: { rotation: 90 as const, area, orientation: "landscape" as const } };
     const s = { ...initialState(TODAY), scans: { front: scan } };
     const front = layoutSlot(copyLayout(s), "front");
-    expect(front.box).toEqual(front.slot);
+    expect(front.box).toEqual(front.outline);
     expect(front.image).toMatchObject({
       crop: { x: 0, y: 316, width: 340, height: 540 },
       width: 204,
