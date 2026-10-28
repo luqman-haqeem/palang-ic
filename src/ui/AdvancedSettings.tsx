@@ -1,19 +1,20 @@
 import type { SlotId, SlotLayout } from "@/domain/copyLayout";
+import type { DocumentKind } from "@/domain/document";
 import type { BandStyle, PalangPlacement } from "@/domain/palang";
 import { BandStyleControls } from "@/ui/BandStyleControls";
 import { CardStyleControls } from "@/ui/CardStyleControls";
 import { PlacementControls } from "@/ui/PlacementControls";
-import type { DocumentKind } from "@/domain/document";
 import { SettingsReadout } from "@/ui/SettingsReadout";
 
 type Props = {
   kind: DocumentKind;
-  /** The Copy layout's slots that have a Scan, each with a position control. */
+  /** The Copy layout's slots that have a Scan, each with a position control.
+   *  The only source of positions and bounds, so the controls show what is
+   *  drawn. */
   slots: SlotLayout[];
   /** Card corner rounding is a MyKad setting; a Page is always square. */
   showCornerRadius: boolean;
   style: BandStyle;
-  placements: Record<SlotId, PalangPlacement>;
   cornerRadius: number;
   onStyleChange: (patch: Partial<BandStyle>) => void;
   onCornerRadiusChange: (radius: number) => void;
@@ -29,13 +30,15 @@ export function AdvancedSettings({
   slots,
   showCornerRadius,
   style,
-  placements,
   cornerRadius,
   onStyleChange,
   onCornerRadiusChange,
   onPlacementChange,
   onPlacementReset,
 }: Props) {
+  const positions = Object.fromEntries(
+    slots.map(({ id, band }) => [id, { cx: band.cx, cy: band.cy }]),
+  );
   return (
     <details className="rounded border border-neutral-200">
       <summary className="cursor-pointer px-3 py-2 text-sm font-medium">
@@ -50,13 +53,12 @@ export function AdvancedSettings({
           <PlacementControls
             key={id}
             slot={id}
-            placement={placements[id]}
-            bounds={band.bounds}
+            band={band}
             onChange={(patch) => onPlacementChange(id, patch)}
             onReset={() => onPlacementReset(id)}
           />
         ))}
-        <SettingsReadout style={style} placements={placements} cornerRadius={cornerRadius} />
+        <SettingsReadout style={style} placements={positions} cornerRadius={cornerRadius} />
       </div>
     </details>
   );

@@ -1,11 +1,12 @@
 import { useState } from "react";
-import type { CardFace } from "@/domain/sheet";
+import type { SlotId } from "@/domain/copyLayout";
 import type { BandStyle, PalangPlacement } from "@/domain/palang";
 import { formatSettingsSummary } from "@/domain/settingsSummary";
 
 type Props = {
   style: BandStyle;
-  placements: Record<CardFace, PalangPlacement>;
+  /** Positions as drawn, for the slots on this Copy. */
+  placements: Partial<Record<SlotId, PalangPlacement>>;
   cornerRadius: number;
 };
 

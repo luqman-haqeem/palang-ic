@@ -4,7 +4,7 @@ import { isoToday } from "@/domain/clock";
 import { exportFilename } from "@/domain/filename";
 import { buildPdfBlob } from "@/export/buildPdf";
 import { downloadBlob, downloadDataUrl, renderToDataUrl } from "@/export/renderToDataUrl";
-import { copyLayout, kindSlots, type SlotId } from "@/domain/copyLayout";
+import { copyLayout, kindSlots, layoutSlot, type SlotId } from "@/domain/copyLayout";
 import { needsCrop } from "@/domain/crop";
 import { orientationOf } from "@/domain/sheet";
 import { canExport, initialState, reducer } from "@/state/session";
@@ -101,7 +101,7 @@ export default function App() {
           key={cropping}
           slot={cropping}
           scan={state.scans[cropping]}
-          radius={cropping === "page" ? 0 : state.cornerRadius}
+          radius={layoutSlot(layout, cropping).cornerRadius}
           onApply={(crop) => {
             dispatch({ type: "setCrop", slot: cropping, crop });
             setCropping(null);
@@ -176,7 +176,6 @@ export default function App() {
             slots={layout.slots.filter((slot) => state.scans[slot.id])}
             showCornerRadius={state.kind === "mykad"}
             style={state.style}
-            placements={state.placements}
             cornerRadius={state.cornerRadius}
             onStyleChange={(patch) => dispatch({ type: "setStyle", patch })}
             onCornerRadiusChange={(radius) => dispatch({ type: "setCornerRadius", radius })}

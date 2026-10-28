@@ -24,6 +24,13 @@ describe("formatSettingsSummary", () => {
     expect(formatSettingsSummary(style, dragged, 12)).toContain("back 300,416");
   });
 
+  it("reports only the positions it is given, such as a Page's", () => {
+    expect(formatSettingsSummary(style, { page: { cx: 206, cy: 112 } }, 12)).toBe(
+      "angleDeg -45 | lengthFactor 0.5 | fontSize 14 | ink #000000 | opacity 1 | " +
+        "page 206,112 | cornerRadius 12",
+    );
+  });
+
   it("keeps the length factor readable rather than printing float noise", () => {
     const slid = { ...style, lengthFactor: 0.65000000000000002 };
     expect(formatSettingsSummary(slid, placements, 12)).toContain("lengthFactor 0.65");
