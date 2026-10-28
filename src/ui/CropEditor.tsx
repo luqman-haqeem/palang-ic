@@ -11,9 +11,10 @@ import {
   initialCrop,
   rotateCrop,
   rotatedSize,
+  setCropOrientation,
   zoomCropArea,
 } from "@/domain/crop";
-import type { Rect } from "@/domain/page";
+import type { Orientation, Rect } from "@/domain/page";
 import type { Scan } from "@/state/session";
 
 type Props = {
@@ -63,9 +64,10 @@ export function CropEditor({ slot, scan, radius, onApply, onReset, onCancel }: P
     return () => observer.disconnect();
   }, []);
 
-  // The whole photo as currently turned; a Page's frame turns with it.
+  // The whole photo as currently turned. The frame keeps its own orientation:
+  // turning the photo never turns a Page's frame.
   const turned = rotatedSize(scan.width, scan.height, crop.rotation);
-  const frameBox = cropBox(target, turned.width, turned.height);
+  const frameBox = cropBox(target, crop.orientation);
   const ratio = frameBox.width / frameBox.height;
   const frameWidth = Math.min(size.width * 0.9, size.height * 0.9 * ratio);
   const frame: Rect = {
@@ -97,6 +99,7 @@ export function CropEditor({ slot, scan, radius, onApply, onReset, onCancel }: P
         turned.width,
         turned.height,
         target,
+        c.orientation,
       );
     });
   }
@@ -108,7 +111,7 @@ export function CropEditor({ slot, scan, radius, onApply, onReset, onCancel }: P
         x: c.area.x + (at.x - frame.x) / scale,
         y: c.area.y + (at.y - frame.y) / scale,
       };
-      return zoomCropArea(c.area, factor, focus, turned.width, turned.height, target);
+      return zoomCropArea(c.area, factor, focus, turned.width, turned.height, target, c.orientation);
     });
   }
 
@@ -118,7 +121,13 @@ export function CropEditor({ slot, scan, radius, onApply, onReset, onCancel }: P
 
   function reset() {
     if (onReset) return onReset();
-    changeArea((_, turned) => defaultCropArea(turned.width, turned.height, target));
+    changeArea((c, turned) =>
+      defaultCropArea(turned.width, turned.height, target, c.orientation),
+    );
+  }
+
+  function orient(orientation: Orientation) {
+    setCrop((c) => setCropOrientation(c, orientation, scan.width, scan.height, target));
   }
 
   // Pointers: one drags the photo, two pinch it.
@@ -239,6 +248,23 @@ export function CropEditor({ slot, scan, radius, onApply, onReset, onCancel }: P
         <div className="flex items-center justify-between p-3">
           <h2 className="font-semibold">Crop the {LABEL[slot]}</h2>
           <div className="flex gap-1">
+            {/* A Page's frame is turned on its own, apart from the photo: a
+                document lying upright in a sideways photo needs no rotation. */}
+            {target === "page" && (
+              <div role="group" aria-label="Frame orientation" className="mr-2 flex gap-1">
+                {(["portrait", "landscape"] as const).map((o) => (
+                  <button
+                    key={o}
+                    type="button"
+                    aria-pressed={crop.orientation === o}
+                    className={`${button} capitalize ${crop.orientation === o ? "bg-black text-white" : ""}`}
+                    onClick={() => orient(o)}
+                  >
+                    {o}
+                  </button>
+                ))}
+              </div>
+            )}
             <button type="button" className={button} onClick={() => turn(-90)} aria-label="Rotate left">
               ↺
             </button>

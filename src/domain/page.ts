@@ -16,7 +16,30 @@ export const RADIUS_MAX = 24;
 export const FACE_GAP_MM = 15;
 
 export type CardFace = "front" | "back";
-export type Rect = { x: number; y: number; width: number; height: number };
+export type Size = { width: number; height: number };
+export type Rect = { x: number; y: number } & Size;
+
+/** Which way up the A4 sheet sits. */
+export type Orientation = "portrait" | "landscape";
+
+/** Landscape only when wider than tall: a square counts as portrait, the way
+ *  the sheet sits by default. */
+export function orientationOf({ width, height }: Size): Orientation {
+  return width > height ? "landscape" : "portrait";
+}
+
+/** A portrait size turned to `orientation`. The one place the sheet's sides
+ *  swap, so its px, its mm and a Crop's frame cannot disagree. */
+export function oriented(portrait: Size, orientation: Orientation): Size {
+  return orientation === "landscape"
+    ? { width: portrait.height, height: portrait.width }
+    : { width: portrait.width, height: portrait.height };
+}
+
+/** The A4 sheet in px, either way up. */
+export function sheetSize(orientation: Orientation): Size {
+  return oriented({ width: PAGE.widthPx, height: PAGE.heightPx }, orientation);
+}
 
 /** Nearest whole pixel. Rounding, not truncation: 15mm is 56.69px and the page
  *  layout depends on that being 57. */

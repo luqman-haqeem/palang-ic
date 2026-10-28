@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type BandLayout, copyLayout, layoutSlot } from "@/domain/copyLayout";
-import { initialCrop, rotateCrop } from "@/domain/crop";
+import { initialCrop, rotateCrop, setCropOrientation } from "@/domain/crop";
 import type { BandStyle } from "@/domain/palang";
 import { initialState, type Scan, type SessionState } from "@/state/session";
 
@@ -111,23 +111,34 @@ describe("copyLayout for a Page", () => {
 describe("copyLayout for a cropped Page", () => {
   const cropped = (scan: Scan, crop: Scan["crop"]): Scan => ({ ...scan, crop });
 
-  it("fills the whole portrait sheet with a portrait Page Crop of a landscape photo", () => {
-    // A document photographed upright on a table, with the phone held sideways.
+  it("lays an upright portrait document in a landscape photo on a portrait sheet, unturned", () => {
+    // A document lying upright on a table, photographed with the phone sideways.
     const photo = fakeScan(4000, 3000);
-    const crop = rotateCrop(initialCrop(4000, 3000, "page"), 90, 4000, 3000, "page");
+    const crop = setCropOrientation(initialCrop(4000, 3000, "page"), "portrait", 4000, 3000, "page");
     const layout = copyLayout(pageSession(cropped(photo, crop)));
     expect(layout.sheet).toEqual({ width: 794, height: 1123 });
-    expect(layoutSlot(layout, "page").box).toEqual({ x: 0, y: 0, width: 794, height: 1123 });
+    const { box, image } = layoutSlot(layout, "page");
+    expect(box).toEqual({ x: 0, y: 0, width: 794, height: 1123 });
+    expect(image).toMatchObject({ rotation: 0, width: 794, height: 1123 });
   });
 
-  it("turns the sheet landscape once a quarter turn makes the Page Crop landscape", () => {
+  it("keeps the sheet in the Crop's orientation when a quarter turn only turns the photo", () => {
     const photo = fakeScan(3000, 4000);
     const crop = rotateCrop(initialCrop(3000, 4000, "page"), -90, 3000, 4000, "page");
     const layout = copyLayout(pageSession(cropped(photo, crop)));
-    expect(layout.sheet).toEqual({ width: 1123, height: 794 });
+    expect(layout.sheet).toEqual({ width: 794, height: 1123 });
     const { box, image } = layoutSlot(layout, "page");
-    expect(box).toEqual({ x: 0, y: 0, width: 1123, height: 794 });
-    expect(image).toMatchObject({ rotation: 270, width: 794, height: 1123 });
+    expect(box).toEqual({ x: 0, y: 0, width: 794, height: 1123 });
+    // Drawn sideways, then turned to fill the portrait sheet.
+    expect(image).toMatchObject({ rotation: 270, width: 1123, height: 794 });
+  });
+
+  it("turns the sheet landscape for a landscape Crop, filled edge to edge", () => {
+    const photo = fakeScan(3000, 4000);
+    const crop = setCropOrientation(initialCrop(3000, 4000, "page"), "landscape", 3000, 4000, "page");
+    const layout = copyLayout(pageSession(cropped(photo, crop)));
+    expect(layout.sheet).toEqual({ width: 1123, height: 794 });
+    expect(layoutSlot(layout, "page").box).toEqual({ x: 0, y: 0, width: 1123, height: 794 });
   });
 });
 

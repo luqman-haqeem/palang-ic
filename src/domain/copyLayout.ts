@@ -1,5 +1,15 @@
 import { type CardImageGeometry, cardImageGeometry } from "@/domain/crop";
-import { cardRect, type CardFace, cardSize, containFit, PAGE, type Rect } from "@/domain/page";
+import {
+  cardRect,
+  type CardFace,
+  cardSize,
+  containFit,
+  type Orientation,
+  orientationOf,
+  PAGE,
+  type Rect,
+  sheetSize,
+} from "@/domain/page";
 import { bandGeometry, type PalangPlacement } from "@/domain/palang";
 import type { DocumentKind, Scan, SessionState } from "@/state/session";
 
@@ -181,19 +191,16 @@ function pageLayout(session: SessionState): CopyLayout {
 }
 
 function pageFrame(scan: Scan | undefined) {
-  const shape = scan ? pageShape(scan) : null;
-  const landscape = shape !== null && shape.width > shape.height;
-  const sheet = landscape
-    ? { width: PAGE.heightPx, height: PAGE.widthPx }
-    : { width: PAGE.widthPx, height: PAGE.heightPx };
+  const sheet = sheetSize(pageOrientation(scan));
   const slot: Rect = { x: 0, y: 0, ...sheet };
   return { sheet, slot, ...placeScan(scan, slot) };
 }
 
-/** The Page as it will be drawn: its Crop's area once framed, else the whole
- *  Scan. The area is already in turned pixels. */
-function pageShape(scan: Scan): { width: number; height: number } {
-  return scan.crop ? scan.crop.area : scan;
+/** The way up the sheet sits: a Crop's own frame once framed, else the whole
+ *  Scan's shape. Portrait while there is no Scan. */
+function pageOrientation(scan: Scan | undefined): Orientation {
+  if (!scan) return "portrait";
+  return scan.crop ? scan.crop.orientation : orientationOf(scan);
 }
 
 /** Unlike a card, a Page has no page around it to overhang onto, so the whole

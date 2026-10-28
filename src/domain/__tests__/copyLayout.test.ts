@@ -96,7 +96,7 @@ describe("copyLayout document boxes", () => {
 
   it("fills the card slot exactly with a cropped scan", () => {
     const area = { x: 10, y: 20, width: 500, height: 315 };
-    const scan = { ...fakeScan(), crop: { rotation: 0 as const, area } };
+    const scan = { ...fakeScan(), crop: { rotation: 0 as const, area, orientation: "landscape" as const } };
     const s = { ...initialState(TODAY), scans: { back: scan } };
     const back = layoutSlot(copyLayout(s), "back");
     expect(back.box).toEqual({ x: 235, y: 355, width: 323, height: 204 });
@@ -114,7 +114,7 @@ describe("copyLayout document boxes", () => {
 
   it("turns a quarter-turned crop back into the original image's pixels", () => {
     const area = { x: 0, y: 0, width: 540, height: 340 };
-    const scan = { ...fakeScan(540, 856), crop: { rotation: 90 as const, area } };
+    const scan = { ...fakeScan(540, 856), crop: { rotation: 90 as const, area, orientation: "landscape" as const } };
     const s = { ...initialState(TODAY), scans: { front: scan } };
     const front = layoutSlot(copyLayout(s), "front");
     expect(front.box).toEqual(front.slot);

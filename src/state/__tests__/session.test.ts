@@ -109,7 +109,11 @@ describe("scans", () => {
 });
 
 describe("crops", () => {
-  const crop = { rotation: 90 as const, area: { x: 0, y: 100, width: 1600, height: 1010 } };
+  const crop = {
+    rotation: 90 as const,
+    area: { x: 0, y: 100, width: 1600, height: 1010 },
+    orientation: "landscape" as const,
+  };
 
   it("frames one face without touching the other", () => {
     let s = reducer(initialState(TODAY), { type: "setScan", slot: "front", scan: fakeScan() });

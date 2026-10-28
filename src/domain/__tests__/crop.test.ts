@@ -8,6 +8,7 @@ import {
   needsCrop,
   rotateCrop,
   rotatedSize,
+  setCropOrientation,
   zoomCropArea,
 } from "@/domain/crop";
 
@@ -177,7 +178,7 @@ describe("cardImageGeometry", () => {
 
 describe("a Page Crop", () => {
   it("frames the tallest portrait A4 area across the middle of a portrait photo", () => {
-    const area = defaultCropArea(3000, 4000, "page");
+    const area = defaultCropArea(3000, 4000, "page", "portrait");
     expect(area.y).toBe(0);
     expect(area.height).toBe(4000);
     expect(area.width).toBeCloseTo(2828.1, 1); // 4000 / (1123/794), about 4000 / √2
@@ -190,38 +191,59 @@ describe("a Page Crop", () => {
     expect(crop.area.width / crop.area.height).toBeCloseTo(1 / Math.SQRT2, 3);
   });
 
-  it("turns landscape after a quarter turn, and portrait again after another", () => {
+  it("frames a landscape photo landscape on first open", () => {
+    const crop = initialCrop(4000, 3000, "page");
+    expect(crop.orientation).toBe("landscape");
+    expect(crop.area.width / crop.area.height).toBeCloseTo(Math.SQRT2, 3);
+  });
+
+  it("frames a portrait photo portrait on first open", () => {
+    expect(initialCrop(3000, 4000, "page").orientation).toBe("portrait");
+  });
+
+  it("keeps its orientation through a quarter turn, which only turns the photo", () => {
     const turned = rotateCrop(initialCrop(3000, 4000, "page"), 90, 3000, 4000, "page");
-    expect(turned.area).toMatchObject({ x: 0, width: 4000 });
-    expect(turned.area.width / turned.area.height).toBeCloseTo(Math.SQRT2, 3);
-    const back = rotateCrop(turned, 90, 3000, 4000, "page");
-    expect(back.area.width / back.area.height).toBeCloseTo(1 / Math.SQRT2, 3);
+    expect(turned.rotation).toBe(90);
+    expect(turned.orientation).toBe("portrait");
+    // A portrait A4 frame, as tall as the turned 4000 x 3000 photo allows.
+    expect(turned.area).toMatchObject({ y: 0, height: 3000 });
+    expect(turned.area.width / turned.area.height).toBeCloseTo(1 / Math.SQRT2, 3);
+  });
+
+  it("turns the frame portrait on a landscape photo without turning the photo", () => {
+    // A document lying upright on a table, photographed with the phone sideways.
+    const crop = setCropOrientation(initialCrop(4000, 3000, "page"), "portrait", 4000, 3000, "page");
+    expect(crop.rotation).toBe(0);
+    expect(crop.orientation).toBe("portrait");
+    expect(crop.area).toEqual(defaultCropArea(4000, 3000, "page", "portrait"));
+    expect(crop.area.width / crop.area.height).toBeCloseTo(1 / Math.SQRT2, 3);
   });
 
   it("keeps A4 proportions whatever it is asked to do", () => {
-    const a = clampCropArea({ x: 0, y: 0, width: 2000, height: 300 }, 3000, 4000, "page");
+    const a = clampCropArea({ x: 0, y: 0, width: 2000, height: 300 }, 3000, 4000, "page", "portrait");
     expect(a.width / a.height).toBeCloseTo(1 / Math.SQRT2, 3);
   });
 
   it("zooms in on a phone photo as far as a 150dpi Page", () => {
-    const start = defaultCropArea(3000, 4000, "page");
-    const a = zoomCropArea(start, 10, { x: 1500, y: 2000 }, 3000, 4000, "page");
+    const start = defaultCropArea(3000, 4000, "page", "portrait");
+    const a = zoomCropArea(start, 10, { x: 1500, y: 2000 }, 3000, 4000, "page", "portrait");
     expect(a.width).toBeCloseTo(1240.6, 1); // 794px sheet x 150/96
     expect(a.width / a.height).toBeCloseTo(1 / Math.SQRT2, 3);
   });
 
-  it("leaves a MyKad Crop card-shaped", () => {
+  it("leaves a MyKad Crop card-shaped and landscape", () => {
+    expect(initialCrop(3000, 4000).orientation).toBe("landscape");
     expect(defaultCropArea(3000, 4000)).toEqual(defaultCropArea(3000, 4000, "card"));
   });
 });
 
 describe("cropBox", () => {
   it("is the card box for a Card face, however the photo is turned", () => {
-    expect(cropBox("card", 3000, 4000)).toEqual({ width: 323, height: 204 });
+    expect(cropBox("card", "landscape")).toEqual({ width: 323, height: 204 });
   });
 
-  it("is the A4 sheet for a Page, turned to the photo", () => {
-    expect(cropBox("page", 3000, 4000)).toEqual({ width: 794, height: 1123 });
-    expect(cropBox("page", 4000, 3000)).toEqual({ width: 1123, height: 794 });
+  it("is the A4 sheet for a Page, in the Crop's own orientation", () => {
+    expect(cropBox("page", "portrait")).toEqual({ width: 794, height: 1123 });
+    expect(cropBox("page", "landscape")).toEqual({ width: 1123, height: 794 });
   });
 });
