@@ -7,6 +7,7 @@ import {
   type Orientation,
   orientationOf,
   type Rect,
+  type Size,
   sheetSize,
 } from "@/domain/sheet";
 import { type BandStyle, bandGeometry, type PalangPlacement } from "@/domain/palang";
@@ -64,7 +65,7 @@ export type SlotLayout = {
 
 /** Everything the preview and the export draw, in sheet px. */
 export type CopyLayout = {
-  sheet: { width: number; height: number };
+  sheet: Size;
   /** In drawing order. */
   slots: SlotLayout[];
 };
@@ -222,7 +223,7 @@ function pageOrientation(scan: Scan | undefined): Orientation {
  *  so it keeps its MyKad proportions. */
 function pageBand(
   input: CopyInput,
-  sheet: { width: number; height: number },
+  sheet: Size,
   doc: Rect,
 ): BandLayout {
   const { angleDeg, lengthFactor } = input.style;

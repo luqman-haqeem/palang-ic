@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { cardRect, cardSize, containFit, mmToPx, SHEET } from "@/domain/sheet";
+import {
+  cardRect,
+  cardSize,
+  containFit,
+  mmToPx,
+  oriented,
+  orientationOf,
+  SHEET,
+  sheetSize,
+} from "@/domain/sheet";
 
 describe("sheet constants", () => {
   it("is A4 at 96dpi", () => {
@@ -56,5 +65,31 @@ describe("containFit", () => {
     expect(fitted.width).toBe(0);
     expect(fitted.height).toBe(0);
     expect(Number.isFinite(fitted.x)).toBe(true);
+  });
+});
+
+describe("orientationOf", () => {
+  it("reads a sheet wider than tall as landscape", () => {
+    expect(orientationOf({ width: 1123, height: 794 })).toBe("landscape");
+  });
+
+  it("reads the portrait A4 sheet every MyKad Copy uses as portrait", () => {
+    expect(orientationOf({ width: 794, height: 1123 })).toBe("portrait");
+  });
+
+  it("reads a square as portrait, the way the sheet sits by default", () => {
+    expect(orientationOf({ width: 1000, height: 1000 })).toBe("portrait");
+  });
+});
+
+describe("oriented", () => {
+  it("swaps a portrait size's sides for landscape only", () => {
+    expect(oriented({ width: 210, height: 297 }, "landscape")).toEqual({ width: 297, height: 210 });
+    expect(oriented({ width: 210, height: 297 }, "portrait")).toEqual({ width: 210, height: 297 });
+  });
+
+  it("gives the A4 sheet in px either way up", () => {
+    expect(sheetSize("portrait")).toEqual({ width: 794, height: 1123 });
+    expect(sheetSize("landscape")).toEqual({ width: 1123, height: 794 });
   });
 });

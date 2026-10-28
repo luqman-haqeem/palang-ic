@@ -1,25 +1,19 @@
 import { jsPDF } from "jspdf";
-import { SHEET } from "@/domain/sheet";
+import { type Orientation, oriented, SHEET } from "@/domain/sheet";
 
-export type SheetOrientation = "portrait" | "landscape";
-
-/** The sheet's orientation from its size: landscape when it is wider than
- *  tall, as a landscape Page's sheet is. */
-export function sheetOrientation(sheet: { width: number; height: number }): SheetOrientation {
-  return sheet.width > sheet.height ? "landscape" : "portrait";
-}
-
-export function buildPdfDoc(jpegDataUrl: string, orientation: SheetOrientation = "portrait"): jsPDF {
+/** One A4 page the given way up, the JPEG laid edge to edge. The orientation
+ *  is the Copy layout's sheet's, never assumed: a landscape Page drawn on a
+ *  portrait PDF page would be stretched. */
+export function buildPdfDoc(jpegDataUrl: string, orientation: Orientation): jsPDF {
   if (!jpegDataUrl.startsWith("data:image/jpeg")) {
     throw new Error("The sheet could not be rendered as a JPEG for the PDF.");
   }
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation });
-  const [width, height] =
-    orientation === "landscape" ? [SHEET.heightMm, SHEET.widthMm] : [SHEET.widthMm, SHEET.heightMm];
+  const { width, height } = oriented({ width: SHEET.widthMm, height: SHEET.heightMm }, orientation);
   doc.addImage(jpegDataUrl, "JPEG", 0, 0, width, height);
   return doc;
 }
 
-export function buildPdfBlob(jpegDataUrl: string, orientation: SheetOrientation = "portrait"): Blob {
+export function buildPdfBlob(jpegDataUrl: string, orientation: Orientation): Blob {
   return buildPdfDoc(jpegDataUrl, orientation).output("blob");
 }

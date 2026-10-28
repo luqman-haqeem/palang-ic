@@ -13,7 +13,7 @@ import {
   setCropOrientation,
   zoomCropArea,
 } from "@/domain/crop";
-import type { Orientation, Rect } from "@/domain/sheet";
+import type { Orientation, Rect, Size } from "@/domain/sheet";
 import type { Scan } from "@/domain/document";
 
 type Props = {
@@ -80,7 +80,7 @@ export function CropEditor({ slot, scan, radius, onApply, onCancel }: Props) {
   /** Screen gestures become area changes against the latest crop, so a burst of
    *  pointer events never works from a stale frame. Ignored until the stage has
    *  been measured: a zero-width frame would divide the area into NaN. */
-  function changeArea(next: (c: Crop, turned: { width: number; height: number }) => Rect) {
+  function changeArea(next: (c: Crop, turned: Size) => Rect) {
     if (frame.width <= 0) return;
     setCrop((c) => ({
       ...c,

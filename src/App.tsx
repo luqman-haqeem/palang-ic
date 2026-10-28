@@ -2,10 +2,11 @@ import { useEffect, useReducer, useRef, useState } from "react";
 import type Konva from "konva";
 import { isoToday } from "@/domain/clock";
 import { exportFilename } from "@/domain/filename";
-import { buildPdfBlob, sheetOrientation } from "@/export/buildPdf";
+import { buildPdfBlob } from "@/export/buildPdf";
 import { downloadBlob, downloadDataUrl, renderToDataUrl } from "@/export/renderToDataUrl";
 import { copyLayout, kindSlots, type SlotId } from "@/domain/copyLayout";
 import { needsCrop } from "@/domain/crop";
+import { orientationOf } from "@/domain/sheet";
 import { canExport, initialState, reducer } from "@/state/session";
 import { forgetLine, loadLines, rememberLine } from "@/state/savedLines";
 import { SheetStage } from "@/render/SheetStage";
@@ -36,7 +37,7 @@ export default function App() {
         downloadDataUrl(url, filename);
       } else {
         const jpeg = renderToDataUrl(stage, { mimeType: "image/jpeg", quality: 0.92 });
-        downloadBlob(buildPdfBlob(jpeg, sheetOrientation(copyLayout(state).sheet)), filename);
+        downloadBlob(buildPdfBlob(jpeg, orientationOf(copyLayout(state).sheet)), filename);
       }
       setSaved(rememberLine(state.line));
       setError(null);

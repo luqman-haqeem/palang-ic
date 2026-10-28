@@ -50,7 +50,7 @@ export function mmToPx(mm: number): number {
 /** Floors rather than rounding: 85.6mm is 323.53px, and a reproduced ID card
  *  rendered a fraction under true size is harmless where over true size
  *  misrepresents the document. */
-export function cardSize(): { width: number; height: number } {
+export function cardSize(): Size {
   return {
     width: Math.floor(CARD.widthMm * MM_TO_PX),
     height: Math.floor(CARD.heightMm * MM_TO_PX),

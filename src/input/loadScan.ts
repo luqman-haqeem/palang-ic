@@ -1,4 +1,5 @@
 import type { DocumentKind, Scan } from "@/domain/document";
+import type { Size } from "@/domain/sheet";
 
 export const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 export const MAX_EDGE = 4096;
@@ -22,7 +23,7 @@ export function downscaleTarget(
   width: number,
   height: number,
   maxEdge: number = MAX_EDGE,
-): { width: number; height: number } {
+): Size {
   const longest = Math.max(width, height);
   if (longest <= maxEdge) return { width, height };
   const scale = maxEdge / longest;
