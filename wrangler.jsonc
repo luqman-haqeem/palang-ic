@@ -9,7 +9,8 @@
     "not_found_handling": "single-page-application"
   },
   "observability": { "enabled": true },
-  // Required by `wrangler preview`, which Workers Builds runs for non-production
-  // branches. Empty: assets and compatibility settings stay at the top level.
+  // Required by `wrangler preview`, which Workers Builds runs for every
+  // non-master branch: each PR gets a public Preview URL. Empty is enough —
+  // assets and compatibility settings above are shared.
   "previews": {}
 }
