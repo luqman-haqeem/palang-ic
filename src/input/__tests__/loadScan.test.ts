@@ -59,3 +59,17 @@ describe("downscaleTarget", () => {
     expect(height).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe("MAX_EDGE for a Page", () => {
+  // A4 is 297mm on its long edge: 297 / 25.4 * 300 ≈ 3508px at 300dpi.
+  const A4_LONG_EDGE_300DPI = 3508;
+
+  it("keeps a full A4-at-300dpi Page Scan at its original size", () => {
+    expect(downscaleTarget(2480, 3508)).toEqual({ width: 2480, height: 3508 });
+    expect(downscaleTarget(3508, 2480)).toEqual({ width: 3508, height: 2480 });
+  });
+
+  it("never lets a Page fall below the A4-at-300dpi long edge", () => {
+    expect(MAX_EDGE).toBeGreaterThanOrEqual(A4_LONG_EDGE_300DPI);
+  });
+});

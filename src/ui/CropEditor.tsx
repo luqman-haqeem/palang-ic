@@ -1,29 +1,31 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Image as KonvaImage, Layer, Rect as KonvaRect, Stage } from "react-konva";
+import { type SlotId, slotKind } from "@/domain/copyLayout";
 import {
   cardImageGeometry,
-  cardRatio,
   clampCropArea,
   type Crop,
+  cropBox,
   defaultCropArea,
   initialCrop,
   rotateCrop,
   rotatedSize,
+  setCropOrientation,
   zoomCropArea,
 } from "@/domain/crop";
-import { type CardFace, cardSize, type Rect } from "@/domain/page";
-import type { Scan } from "@/state/document";
+import type { Orientation, Rect, Size } from "@/domain/sheet";
+import type { Scan } from "@/domain/document";
 
 type Props = {
-  face: CardFace;
+  slot: SlotId;
   scan: Scan;
-  /** The card's corner rounding in page px, previewed on the frame. */
+  /** The box's corner rounding in sheet px, previewed on the frame. */
   radius: number;
   onApply: (crop: Crop) => void;
   onCancel: () => void;
 };
 
-const LABEL: Record<CardFace, string> = { front: "front", back: "back" };
+const LABEL: Record<SlotId, string> = { front: "front", back: "back", page: "page" };
 const ZOOM_STEP = 1.25;
 /** Zoom per pixel of wheel travel: one ~100px mouse notch is ~10%. A trackpad
  *  pinch arrives as ctrl+wheel in much smaller deltas, so it gets more per px. */
@@ -34,11 +36,15 @@ const NUDGE_PX = 20;
 
 type Point = { x: number; y: number };
 
-/** A fixed card-shaped frame with the photo moved and pinch-zoomed beneath it.
- *  Every rule — the photo always covering the frame, the 300dpi zoom limit,
- *  rotation — lives in domain/crop; this only turns gestures into calls. */
-export function CropEditor({ face, scan, radius, onApply, onCancel }: Props) {
-  const [crop, setCrop] = useState<Crop>(() => scan.crop ?? initialCrop(scan.width, scan.height));
+/** A fixed frame of the slot's shape — a card, or an A4 Page — with the photo
+ *  moved and pinch-zoomed beneath it. Every rule — the frame's shape, the photo
+ *  always covering it, the zoom limit, rotation — lives in domain/crop; this
+ *  only turns gestures into calls. */
+export function CropEditor({ slot, scan, radius, onApply, onCancel }: Props) {
+  const kind = slotKind(slot);
+  const [crop, setCrop] = useState<Crop>(
+    () => scan.crop ?? initialCrop(scan.width, scan.height, kind),
+  );
   const box = useRef<HTMLDivElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
   // Focus leaves whatever field the user was in, so keys reach the editor.
@@ -55,7 +61,11 @@ export function CropEditor({ face, scan, radius, onApply, onCancel }: Props) {
     return () => observer.disconnect();
   }, []);
 
-  const ratio = cardRatio();
+  // The whole photo as currently turned. The frame keeps its own orientation:
+  // turning the photo never turns a Page's frame.
+  const turned = rotatedSize(scan.width, scan.height, crop.rotation);
+  const frameBox = cropBox(kind, crop.orientation);
+  const ratio = frameBox.width / frameBox.height;
   const frameWidth = Math.min(size.width * 0.9, size.height * 0.9 * ratio);
   const frame: Rect = {
     x: (size.width - frameWidth) / 2,
@@ -70,7 +80,7 @@ export function CropEditor({ face, scan, radius, onApply, onCancel }: Props) {
   /** Screen gestures become area changes against the latest crop, so a burst of
    *  pointer events never works from a stale frame. Ignored until the stage has
    *  been measured: a zero-width frame would divide the area into NaN. */
-  function changeArea(next: (c: Crop, turned: { width: number; height: number }) => Rect) {
+  function changeArea(next: (c: Crop, turned: Size) => Rect) {
     if (frame.width <= 0) return;
     setCrop((c) => ({
       ...c,
@@ -85,6 +95,8 @@ export function CropEditor({ face, scan, radius, onApply, onCancel }: Props) {
         { ...c.area, x: c.area.x - dx / scale, y: c.area.y - dy / scale },
         turned.width,
         turned.height,
+        kind,
+        c.orientation,
       );
     });
   }
@@ -96,16 +108,25 @@ export function CropEditor({ face, scan, radius, onApply, onCancel }: Props) {
         x: c.area.x + (at.x - frame.x) / scale,
         y: c.area.y + (at.y - frame.y) / scale,
       };
-      return zoomCropArea(c.area, factor, focus, turned.width, turned.height);
+      return zoomCropArea(c.area, factor, focus, turned.width, turned.height, kind, c.orientation);
     });
   }
 
   function turn(step: 90 | -90) {
-    setCrop((c) => rotateCrop(c, step, scan.width, scan.height));
+    setCrop((c) => rotateCrop(c, step, scan.width, scan.height, kind));
   }
 
+  /** Reframes in the editor, for a card and a Page alike: it undoes the
+   *  framing, keeping the turn and the frame's orientation, and nothing is
+   *  applied until the user says so. */
   function reset() {
-    changeArea((_, turned) => defaultCropArea(turned.width, turned.height));
+    changeArea((c, turned) =>
+      defaultCropArea(turned.width, turned.height, kind, c.orientation),
+    );
+  }
+
+  function orient(orientation: Orientation) {
+    setCrop((c) => setCropOrientation(c, orientation, scan.width, scan.height, kind));
   }
 
   // Pointers: one drags the photo, two pinch it.
@@ -197,7 +218,6 @@ export function CropEditor({ face, scan, radius, onApply, onCancel }: Props) {
   }, []);
 
   // The whole turned photo, placed so `crop.area` lands exactly on the frame.
-  const turned = rotatedSize(scan.width, scan.height, crop.rotation);
   const scale = scaleFor(crop.area);
   const photo = cardImageGeometry(
     { rotation: crop.rotation, area: { x: 0, y: 0, ...turned } },
@@ -211,7 +231,7 @@ export function CropEditor({ face, scan, radius, onApply, onCancel }: Props) {
     },
   );
   const { crop: _whole, ...photoNode } = photo;
-  const frameRadius = (radius * frame.width) / cardSize().width;
+  const frameRadius = (radius * frame.width) / frameBox.width;
   const button = "rounded border border-neutral-300 px-3 py-1.5 text-sm";
 
   return (
@@ -220,13 +240,30 @@ export function CropEditor({ face, scan, radius, onApply, onCancel }: Props) {
       tabIndex={-1}
       role="dialog"
       aria-modal="true"
-      aria-label={`Crop the ${LABEL[face]}`}
+      aria-label={`Crop the ${LABEL[slot]}`}
       className="fixed inset-0 z-50 flex bg-black/80 outline-none sm:items-center sm:justify-center sm:p-4"
     >
       <div className="flex h-full w-full flex-col bg-white sm:h-auto sm:max-w-[640px] sm:rounded-lg">
         <div className="flex items-center justify-between p-3">
-          <h2 className="font-semibold">Crop the {LABEL[face]}</h2>
+          <h2 className="font-semibold">Crop the {LABEL[slot]}</h2>
           <div className="flex gap-1">
+            {/* A Page's frame is turned on its own, apart from the photo: a
+                document lying upright in a sideways photo needs no rotation. */}
+            {kind === "page" && (
+              <div role="group" aria-label="Frame orientation" className="mr-2 flex gap-1">
+                {(["portrait", "landscape"] as const).map((o) => (
+                  <button
+                    key={o}
+                    type="button"
+                    aria-pressed={crop.orientation === o}
+                    className={`${button} capitalize ${crop.orientation === o ? "bg-black text-white" : ""}`}
+                    onClick={() => orient(o)}
+                  >
+                    {o}
+                  </button>
+                ))}
+              </div>
+            )}
             <button type="button" className={button} onClick={() => turn(-90)} aria-label="Rotate left">
               ↺
             </button>

@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { cardRect } from "@/domain/page";
-import { placementBounds } from "@/domain/palang";
+import { copyLayout, layoutSlot } from "@/domain/copyLayout";
+import { cardRect } from "@/domain/sheet";
+import { initialState } from "@/state/session";
 
-describe("placementBounds", () => {
+const placementBounds = (face: "front" | "back") =>
+  layoutSlot(copyLayout(initialState("2026-10-01")), face).band.bounds;
+
+describe("placement bounds from the Copy layout", () => {
   it("spans exactly the front card, so a slider cannot leave it", () => {
     const rect = cardRect("front");
     expect(placementBounds("front")).toEqual({

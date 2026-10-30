@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_BAND_STYLE, DEFAULT_OPACITY, OPACITY_MAX, OPACITY_MIN } from "@/domain/palang";
-import { initialState, reducer } from "@/state/document";
+import { initialState, reducer } from "@/state/session";
 
 describe("opacity defaults", () => {
   it("starts fully opaque, because a palang is ink rather than a watermark", () => {

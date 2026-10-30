@@ -5,7 +5,7 @@
  *  export button does nothing". Downloads therefore go through object URLs. */
 export function dataUrlToBlob(dataUrl: string): Blob {
   const match = /^data:([^;,]+);base64,(.*)$/s.exec(dataUrl);
-  if (!match) throw new Error("The page could not be encoded for download.");
+  if (!match) throw new Error("The sheet could not be encoded for download.");
   const [, mimeType, base64] = match;
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);

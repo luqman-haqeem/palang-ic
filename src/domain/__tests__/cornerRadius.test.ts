@@ -4,7 +4,7 @@ import {
   cardCornerRadius,
   cardSize,
   clampCornerRadius,
-} from "@/domain/page";
+} from "@/domain/sheet";
 
 describe("CARD_CORNER_RADIUS_MM", () => {
   it("is the ID-1 card radius, like the 85.6x54mm card size itself", () => {

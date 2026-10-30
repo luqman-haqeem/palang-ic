@@ -24,7 +24,8 @@ export default defineConfig({
       manifest: {
         name: "palang-ic",
         short_name: "palang-ic",
-        description: "Add a palang to MyKad copies, entirely in your browser.",
+        description:
+          "Add a palang to copies of your MyKad or any other document, entirely in your browser.",
         theme_color: "#000000",
         background_color: "#ffffff",
         display: "standalone",

@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { cardRect, cardSize } from "@/domain/page";
-import {
-  bandGeometry,
-  DEFAULT_BAND_STYLE,
-  defaultPlacement,
-  LENGTH_MAX,
-  LENGTH_MIN,
-} from "@/domain/palang";
+import { defaultPlacement } from "@/domain/copyLayout";
+import { cardRect, cardSize } from "@/domain/sheet";
+import { bandGeometry, DEFAULT_BAND_STYLE, LENGTH_MAX, LENGTH_MIN } from "@/domain/palang";
 
 describe("DEFAULT_BAND_STYLE", () => {
   it("matches the values tuned against a real MyKad", () => {

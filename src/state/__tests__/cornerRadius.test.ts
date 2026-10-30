@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { cardCornerRadius, RADIUS_MAX, RADIUS_MIN } from "@/domain/page";
-import { initialState, reducer } from "@/state/document";
+import { cardCornerRadius, RADIUS_MAX, RADIUS_MIN } from "@/domain/sheet";
+import { initialState, reducer } from "@/state/session";
 
 const TODAY = "2026-10-02";
 

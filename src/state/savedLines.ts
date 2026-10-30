@@ -22,6 +22,8 @@ function save(lines: string[]): string[] {
   return lines;
 }
 
+/** Puts a used line first, matched case-insensitively so the list does not
+ *  fill with near-duplicates, and keeps at most MAX_SAVED. */
 export function rememberLine(line: string): string[] {
   const trimmed = line.trim();
   const lines = loadLines();
@@ -30,6 +32,8 @@ export function rememberLine(line: string): string[] {
   return save([trimmed, ...rest].slice(0, MAX_SAVED));
 }
 
+/** Drops a line the user no longer wants offered, matched as `rememberLine`
+ *  matches it. */
 export function forgetLine(line: string): string[] {
   const target = line.trim().toLowerCase();
   return save(loadLines().filter((v) => v.toLowerCase() !== target));

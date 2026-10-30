@@ -18,10 +18,17 @@ describe("formatSettingsSummary", () => {
     );
   });
 
-  it("rounds positions to whole pixels, since placement is stored in page px", () => {
+  it("rounds positions to whole pixels, since placement is stored in sheet px", () => {
     const dragged = { front: { cx: 306.7, cy: 155.2 }, back: { cx: 300.4, cy: 415.6 } };
     expect(formatSettingsSummary(style, dragged, 12)).toContain("front 307,155");
     expect(formatSettingsSummary(style, dragged, 12)).toContain("back 300,416");
+  });
+
+  it("reports only the positions it is given, such as a Page's", () => {
+    expect(formatSettingsSummary(style, { page: { cx: 206, cy: 112 } }, 12)).toBe(
+      "angleDeg -45 | lengthFactor 0.5 | fontSize 14 | ink #000000 | opacity 1 | " +
+        "page 206,112 | cornerRadius 12",
+    );
   });
 
   it("keeps the length factor readable rather than printing float noise", () => {

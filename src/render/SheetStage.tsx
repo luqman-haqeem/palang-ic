@@ -1,23 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 import type Konva from "konva";
 import { Layer, Rect, Stage } from "react-konva";
-import { PAGE, type CardFace } from "@/domain/page";
-import type { SessionState } from "@/state/document";
-import { CardSlot } from "@/render/CardSlot";
+import type { CopyLayout, SlotId } from "@/domain/copyLayout";
+import type { SessionState } from "@/state/session";
+import { DocumentImage } from "@/render/DocumentImage";
 import { PalangBand } from "@/render/PalangBand";
-
-const FACES: CardFace[] = ["front", "back"];
 
 type Props = {
   state: SessionState;
-  selected: CardFace | null;
-  onSelect: (face: CardFace | null) => void;
-  onDragEnd: (face: CardFace, patch: { cx: number; cy: number }) => void;
+  /** The geometry of everything drawn; `state` supplies only scans, text and ink. */
+  layout: CopyLayout;
+  selected: SlotId | null;
+  onSelect: (id: SlotId | null) => void;
+  onDragEnd: (id: SlotId, patch: { cx: number; cy: number }) => void;
   stageRef: React.RefObject<Konva.Stage | null>;
 };
 
-export function PageStage({
+export function SheetStage({
   state,
+  layout,
   selected,
   onSelect,
   onDragEnd,
@@ -25,24 +26,25 @@ export function PageStage({
 }: Props) {
   const holder = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
+  const { sheet } = layout;
 
   useEffect(() => {
     const fit = () => {
       const el = holder.current;
       if (!el) return;
-      setScale(Math.min(el.clientWidth / PAGE.widthPx, 1));
+      setScale(Math.min(el.clientWidth / sheet.width, 1));
     };
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
-  }, []);
+  }, [sheet.width]);
 
   return (
     <div ref={holder} className="w-full">
       <Stage
         ref={stageRef}
-        width={PAGE.widthPx * scale}
-        height={PAGE.heightPx * scale}
+        width={sheet.width * scale}
+        height={sheet.height * scale}
         scale={{ x: scale, y: scale }}
         onMouseDown={(e) => {
           if (e.target === e.target.getStage()) onSelect(null);
@@ -50,28 +52,22 @@ export function PageStage({
         className="shadow-sm"
       >
         <Layer>
-          <Rect x={0} y={0} width={PAGE.widthPx} height={PAGE.heightPx} fill="#ffffff" />
-          {FACES.map((face) => (
-            <CardSlot
-              key={face}
-              face={face}
-              scan={state.scans[face]}
-              radius={state.cornerRadius}
-            />
+          <Rect x={0} y={0} width={sheet.width} height={sheet.height} fill="#ffffff" />
+          {layout.slots.map((slot) => (
+            <DocumentImage key={slot.id} layout={slot} scan={state.scans[slot.id]} />
           ))}
         </Layer>
         <Layer>
-          {FACES.map((face) =>
-            state.scans[face] ? (
+          {layout.slots.map((slot) =>
+            state.scans[slot.id] ? (
               <PalangBand
-                key={face}
-                face={face}
-                placement={state.placements[face]}
+                key={slot.id}
+                band={slot.band}
                 style={state.style}
                 line={state.line}
-                selected={selected === face}
-                onSelect={() => onSelect(face)}
-                onDragEnd={(patch) => onDragEnd(face, patch)}
+                selected={selected === slot.id}
+                onSelect={() => onSelect(slot.id)}
+                onDragEnd={(patch) => onDragEnd(slot.id, patch)}
               />
             ) : null,
           )}

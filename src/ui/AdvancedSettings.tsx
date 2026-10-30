@@ -1,4 +1,5 @@
-import type { CardFace } from "@/domain/page";
+import type { SlotId, SlotLayout } from "@/domain/copyLayout";
+import type { DocumentKind } from "@/domain/document";
 import type { BandStyle, PalangPlacement } from "@/domain/palang";
 import { BandStyleControls } from "@/ui/BandStyleControls";
 import { CardStyleControls } from "@/ui/CardStyleControls";
@@ -6,47 +7,58 @@ import { PlacementControls } from "@/ui/PlacementControls";
 import { SettingsReadout } from "@/ui/SettingsReadout";
 
 type Props = {
-  faces: CardFace[];
+  kind: DocumentKind;
+  /** The Copy layout's slots that have a Scan, each with a position control.
+   *  The only source of positions and bounds, so the controls show what is
+   *  drawn. */
+  slots: SlotLayout[];
+  /** Card corner rounding is a MyKad setting; a Page is always square. */
+  showCornerRadius: boolean;
   style: BandStyle;
-  placements: Record<CardFace, PalangPlacement>;
   cornerRadius: number;
   onStyleChange: (patch: Partial<BandStyle>) => void;
   onCornerRadiusChange: (radius: number) => void;
-  onPlacementChange: (face: CardFace, patch: Partial<PalangPlacement>) => void;
-  onPlacementReset: (face: CardFace) => void;
+  onPlacementChange: (slot: SlotId, patch: Partial<PalangPlacement>) => void;
+  onPlacementReset: (slot: SlotId) => void;
 };
 
 /** Collapsed by default. The built-in defaults are tuned to a real card, so
  *  most uses need none of this; it is here for the copy a recipient wants
  *  marked differently. */
 export function AdvancedSettings({
-  faces,
+  kind,
+  slots,
+  showCornerRadius,
   style,
-  placements,
   cornerRadius,
   onStyleChange,
   onCornerRadiusChange,
   onPlacementChange,
   onPlacementReset,
 }: Props) {
+  const positions = Object.fromEntries(
+    slots.map(({ id, band }) => [id, { cx: band.cx, cy: band.cy }]),
+  );
   return (
     <details className="rounded border border-neutral-200">
       <summary className="cursor-pointer px-3 py-2 text-sm font-medium">
         Advanced settings
       </summary>
       <div className="space-y-3 p-3 pt-0">
-        <BandStyleControls style={style} onChange={onStyleChange} />
-        <CardStyleControls cornerRadius={cornerRadius} onChange={onCornerRadiusChange} />
-        {faces.map((face) => (
+        <BandStyleControls kind={kind} style={style} onChange={onStyleChange} />
+        {showCornerRadius && (
+          <CardStyleControls cornerRadius={cornerRadius} onChange={onCornerRadiusChange} />
+        )}
+        {slots.map(({ id, band }) => (
           <PlacementControls
-            key={face}
-            face={face}
-            placement={placements[face]}
-            onChange={(patch) => onPlacementChange(face, patch)}
-            onReset={() => onPlacementReset(face)}
+            key={id}
+            slot={id}
+            band={band}
+            onChange={(patch) => onPlacementChange(id, patch)}
+            onReset={() => onPlacementReset(id)}
           />
         ))}
-        <SettingsReadout style={style} placements={placements} cornerRadius={cornerRadius} />
+        <SettingsReadout style={style} placements={positions} cornerRadius={cornerRadius} />
       </div>
     </details>
   );

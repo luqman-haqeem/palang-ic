@@ -1,7 +1,15 @@
 import type React from "react";
 import { DEFAULT_PALANG_TEXT } from "@/domain/palang";
+import type { DocumentKind } from "@/domain/document";
+
+/** A Page can be any paper, so its hint cannot name the fields to avoid. */
+const KEEP_CLEAR: Record<DocumentKind, string> = {
+  mykad: "Keep the band clear of the photo, name, IC number and date of birth.",
+  page: "Keep the band clear of the names, numbers and dates the recipient needs to read.",
+};
 
 type Props = {
+  kind: DocumentKind;
   line: string;
   saved: string[];
   onChange: (line: string) => void;
@@ -12,7 +20,7 @@ type Props = {
  *  and no auto-date:
  *  different banks and agencies want the wording set out differently, so what
  *  you type is what gets drawn. */
-export function PalangTextField({ line, saved, onChange, onForget }: Props) {
+export function PalangTextField({ kind, line, saved, onChange, onForget }: Props) {
   // Focusing the untouched default selects it, so typing replaces the whole
   // sentence instead of landing mid-word.
   const selectIfUntouched = (e: React.FocusEvent<HTMLTextAreaElement>) => {
@@ -33,7 +41,7 @@ export function PalangTextField({ line, saved, onChange, onForget }: Props) {
       </label>
       <p className="text-xs text-neutral-500">
         Drawn exactly as typed — word it however the recipient wants, and include a date if you
-        want one. Keep the band clear of the photo, name, IC number and date of birth.
+        want one. {KEEP_CLEAR[kind]}
       </p>
       {saved.length > 0 && (
         <div className="mt-2 space-y-1">

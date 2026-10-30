@@ -1,20 +1,21 @@
 import { useRef, useState } from "react";
-import type { CardFace } from "@/domain/page";
+import type { SlotId } from "@/domain/copyLayout";
 import { loadScan } from "@/input/loadScan";
-import type { Scan } from "@/state/document";
+import type { Scan } from "@/domain/document";
 
 type Props = {
-  face: CardFace;
+  slot: SlotId;
   scan?: Scan;
   onLoad: (scan: Scan) => void;
-  onEdit: () => void;
+  /** Absent where there is no crop editor for this slot. */
+  onEdit?: () => void;
   onRemove: () => void;
   onError: (message: string) => void;
 };
 
-const LABEL: Record<CardFace, string> = { front: "Front", back: "Back" };
+const LABEL: Record<SlotId, string> = { front: "Front", back: "Back", page: "Page" };
 
-export function Dropzone({ face, scan, onLoad, onEdit, onRemove, onError }: Props) {
+export function Dropzone({ slot, scan, onLoad, onEdit, onRemove, onError }: Props) {
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
 
@@ -40,12 +41,14 @@ export function Dropzone({ face, scan, onLoad, onEdit, onRemove, onError }: Prop
       className="rounded border border-dashed border-neutral-300 p-3"
     >
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">{LABEL[face]}</span>
+        <span className="text-sm font-medium">{LABEL[slot]}</span>
         {scan ? (
           <span className="flex gap-3">
-            <button type="button" onClick={onEdit} className="text-sm underline">
-              {scan.crop ? "Edit crop" : "Crop"}
-            </button>
+            {onEdit && (
+              <button type="button" onClick={onEdit} className="text-sm underline">
+                {scan.crop ? "Edit crop" : "Crop"}
+              </button>
+            )}
             <button type="button" onClick={onRemove} className="text-sm text-neutral-500 underline">
               Remove
             </button>
